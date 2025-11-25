@@ -3,871 +3,821 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Wall Battle: 진격의 클릭</title>
-    <!-- 모바일 최적화: 확대/더블탭 방지 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KUIS 제12회 불편한 클릭 UI 만들기 대회</title>
 
-    <!-- 구글 폰트 -->
-    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&family=Black+Ops+One&display=swap"
-        rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- ClickBattle Script -->
+    <script src="https://clickbattle2025.web.app/click-battle.js"></script>
 
     <style>
-        :root {
-            --wall-color: #3e3a36;
-            --steam-color: #e0e0e0;
-            --blood-color: #8a0c0c;
-            --outside-green: #2d5a27;
-            /* 조사병단 */
-            --inside-gold: #cfaa48;
-            /* 헌병단 */
-            --bg-dark: #0f0f12;
-            --text-light: #f0f0f0;
-        }
+        /* 커스텀 애니메이션 & 유틸리티 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
 
-        * {
-            box-sizing: border-box;
-            -webkit-user-select: none;
-            /* 텍스트 선택 방지 */
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            touch-action: manipulation;
-            /* 더블탭 확대 방지 */
-        }
-
-        body {
-            margin: 0;
-            font-family: 'Nanum Myeongjo', serif;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-            background-image:
-                linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
-                url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0wIDQwaDQwVjBIMHY0MHptMjAgMjBoMjB2MjBIMjBWNjB6TTAgODBofjB2MjBIMFY4MHoiIGZpbGw9IiMzMzMiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9nPjwvc3ZnPg==');
-        }
-
-        main {
-            width: 100%;
-            max-width: 500px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        /* --- Header --- */
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #555;
-            padding-bottom: 10px;
-        }
-
-        h1 {
-            font-family: 'Black Ops One', cursive;
-            font-size: 2.2rem;
-            margin: 0;
-            color: #fff;
-            text-shadow: 0 0 10px var(--blood-color);
-            letter-spacing: 2px;
-        }
-
-        .team-badge {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 5px 15px;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        /* --- War Status Bar --- */
-        .war-status {
-            display: flex;
-            height: 24px;
-            width: 100%;
-            background: #222;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            position: relative;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .bar-segment {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            white-space: nowrap;
-            transition: width 0.5s ease;
-        }
-
-        .bar-inside {
-            background: var(--inside-gold);
-            color: #000;
-        }
-
-        .bar-outside {
-            background: var(--outside-green);
-            color: #fff;
-        }
-
-        /* --- Stats Grid --- */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: rgba(40, 40, 45, 0.9);
-            border: 1px solid #444;
-            padding: 10px;
-            text-align: center;
-            border-radius: 4px;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: #aaa;
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-            font-family: sans-serif;
-        }
-
-        .red-text {
-            color: #ff6b6b;
-        }
-
-        /* --- Action Area --- */
-        .action-area {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            position: relative;
-        }
-
-        #clickBtn {
-            width: 100%;
-            height: 140px;
-            background: linear-gradient(180deg, #2b2b2b, #1a1a1a);
-            border: 2px solid #666;
-            border-bottom: 6px solid #444;
-            color: #fff;
-            font-size: 1.5rem;
-            font-family: 'Nanum Myeongjo', serif;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.05s, border-bottom 0.05s;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-        }
-
-        #clickBtn:active:not(:disabled) {
-            transform: translateY(4px);
-            border-bottom: 2px solid #444;
-        }
-
-        #clickBtn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            filter: grayscale(100%);
-        }
-
-        /* 이펙트: 베기 효과 */
-        .slash-effect {
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: #fff;
-            box-shadow: 0 0 10px #fff, 0 0 20px cyan;
-            transform: rotate(-45deg);
-            pointer-events: none;
-            animation: slashAnim 0.3s forwards;
-            top: 50%;
-            left: 0;
-        }
-
-        @keyframes slashAnim {
-            0% {
+            to {
                 opacity: 1;
-                transform: scaleX(0) rotate(-45deg);
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes pulse-red {
+
+            0%,
+            100% {
+                color: #fca5a5;
             }
 
             50% {
-                opacity: 1;
-                transform: scaleX(1.2) rotate(-45deg);
-            }
-
-            100% {
-                opacity: 0;
-                transform: scaleX(1.2) rotate(-45deg);
+                color: #ef4444;
             }
         }
 
-        .btn-group {
-            display: flex;
-            width: 100%;
-            gap: 10px;
+        .animate-pulse-red {
+            animation: pulse-red 2s infinite;
         }
 
-        .sub-btn {
-            flex: 1;
-            padding: 12px;
-            background: #333;
-            border: 1px solid #555;
-            color: #ddd;
-            border-radius: 4px;
-            font-family: inherit;
-            cursor: pointer;
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        #startBtn {
-            background: #1e3a5f;
-            border-color: #3b5c85;
-            color: white;
+        /* 스크롤바 숨김 (깔끔한 UI) */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
         }
 
-        #refillBtn {
-            background: #5a2e2e;
-            border-color: #853b3b;
-            color: white;
-        }
-
-        /* --- Leaderboard --- */
-        .leaderboard {
-            margin-top: 20px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid #444;
-            border-radius: 4px;
-            padding: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .leaderboard h3 {
-            margin: 0 0 10px 0;
-            font-size: 1rem;
-            border-bottom: 1px solid #444;
-            padding-bottom: 5px;
-        }
-
-        .rank-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            padding: 4px 0;
-            border-bottom: 1px dotted #333;
-        }
-
-        .rank-item.my-rank {
-            color: #ffd700;
-            font-weight: bold;
-        }
-
-        /* --- Modals --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .modal-content {
-            background: #1a1a1a;
-            border: 2px solid #555;
-            padding: 25px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            border-radius: 8px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-        }
-
-        .survey-option {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            background: #2a2a2a;
-            border: 1px solid #444;
-            color: white;
-            text-align: left;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .survey-option:hover {
-            background: #3a3a3a;
-            border-color: #777;
-        }
-
-        .steam-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            background: radial-gradient(circle, transparent 0%, var(--bg-dark) 90%);
-            z-index: -1;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .text-inside {
-            color: var(--inside-gold);
-        }
-
-        .text-outside {
-            color: #5cb85c;
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
 
-<body>
+<body
+    class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col items-center justify-center overflow-hidden">
 
-    <!-- Firebase SDK Imports -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDocs, onSnapshot, updateDoc, increment, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- 앱 컨테이너 -->
+    <div id="app"
+        class="w-full max-w-md h-screen max-h-screen relative flex flex-col bg-white sm:rounded-3xl sm:h-[90vh] sm:shadow-2xl sm:border border-slate-100 overflow-hidden">
+        <!-- 동적 콘텐츠가 이곳에 렌더링됩니다 -->
+    </div>
 
-        // --- Configuration ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyD86RR_sJufh804b4_Omtsac-6jZyOND1k",
-            authDomain: "projecttitan-ff.firebaseapp.com",
-            projectId: "projecttitan-ff",
-            storageBucket: "projecttitan-ff.firebasestorage.app",
-            messagingSenderId: "481151110136",
-            appId: "1:481151110136:web:b8d69f38e61ad0ca87240d"
+    <script>
+        // ==========================================
+        // 1. 전역 상태 및 유틸리티
+        // ==========================================
+        const state = {
+            view: 'intro', // intro, playing, voting, result
+            levels: [],
+            currentLevelIndex: 0,
+            selectedVote: null,
+            skipClickCount: 0,
+            skipVisible: false,
+            timers: [] // cleanup용
         };
 
-        // --- State ---
-        let db, auth, user;
-        let myTeam = null;
-        let sessionActive = false;
-        let timeLeft = 30; // 30초 게임
-        let sessionScore = 0;
-        let uncommittedScore = 0; // 서버 전송 대기 중인 점수
-        let attempts = 3;
-        let timerInterval;
-        let syncInterval;
+        // 클릭 배틀 트래킹 함수
+        function trackClick() {
+            if (window.ClickBattle && typeof window.ClickBattle.recordClick === 'function') {
+                window.ClickBattle.recordClick();
+                // console.log("Click Recorded!"); 
+            }
+        }
 
-        // 연속 클릭(Hold) 변수
-        let holdTimer = null;
-        const HOLD_INTERVAL = 80; // 0.08초마다 클릭 인정
+        // 배열 섞기
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
 
-        // --- Elements ---
-        const els = {
-            clickBtn: document.getElementById('clickBtn'),
-            startBtn: document.getElementById('startBtn'),
-            refillBtn: document.getElementById('refillBtn'),
-            timeLeft: document.getElementById('timeLeft'),
-            sessionScore: document.getElementById('sessionScore'),
-            attempts: document.getElementById('attempts'),
-            teamName: document.getElementById('teamName'),
-            surveyModal: document.getElementById('surveyModal'),
-            refillModal: document.getElementById('refillModal'),
-            surveyQ: document.getElementById('surveyQuestion'),
-            optA: document.getElementById('optA'),
-            optB: document.getElementById('optB'),
-            leaderboardList: document.getElementById('leaderboardList'),
-            barInside: document.getElementById('barInside'),
-            barOutside: document.getElementById('barOutside')
+        // 타이머 정리 (메모리 누수 방지)
+        function clearAllTimers() {
+            state.timers.forEach(t => clearInterval(t));
+            state.timers.forEach(t => clearTimeout(t));
+            state.timers = [];
+        }
+
+        // 화면 렌더링 헬퍼
+        function render(htmlString) {
+            const app = document.getElementById('app');
+            app.innerHTML = htmlString;
+            lucide.createIcons(); // 아이콘 렌더링
+        }
+
+        // 초기화
+        window.onload = function () {
+            if (window.ClickBattle) {
+                window.ClickBattle.init("1004");
+                console.log("ClickBattle initialized: 1004");
+            }
+            showIntro();
         };
 
-        // --- Initialization ---
-        async function init() {
-            const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // ==========================================
+        // 2. 화면별 렌더링 함수
+        // ==========================================
 
-            // 1. UI 초기화 (오프라인 상태 대비)
-            if (!myTeam) showSurvey();
+        // --- 인트로 화면 ---
+        function showIntro() {
+            clearAllTimers();
+            render(`
+                <div class="flex-1 flex flex-col bg-slate-50">
+                    <div class="bg-slate-900 p-8 text-white text-center rounded-b-3xl shadow-lg z-10">
+                        <i data-lucide="mouse-pointer-2" class="w-16 h-16 mx-auto mb-6 text-yellow-400"></i>
+                        <h1 class="text-2xl font-black tracking-tight mb-2">KUIS 제12회</h1>
+                        <p class="text-slate-400 font-light">불편한 터치 UI 만들기 대회</p>
+                    </div>
+                    <div class="p-8 flex-1 flex flex-col justify-center animate-fade-in">
+                        <div class="bg-yellow-50 p-5 rounded-2xl border border-yellow-100 text-sm text-yellow-900 leading-relaxed mb-8 shadow-sm">
+                            <div class="flex items-center gap-2 font-bold mb-2 text-yellow-700">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i> <span>대회 안내</span>
+                            </div>
+                            본 사이트는 본선 진출작 <span class="font-bold border-b border-yellow-500">10선</span>을 랜덤하게 제공합니다.
+                            <br><br>
+                            오직 <strong>'터치(Touch)'</strong> 만으로 모든 난관을 극복하고, 가장 당신을 화나게 만든 작품에 투표해주세요.
+                        </div>
+                        <button onclick="startGame()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center justify-center gap-2">
+                            심사 시작하기 <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            `);
+        }
 
-            try {
-                // 2. Firebase 연결
-                const app = initializeApp(fbConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
+        function startGame() {
+            trackClick();
+            // 레벨 정의
+            const rawLevels = [
+                { id: 1, title: '생년월일 노가다', render: renderLevel1 },
+                { id: 2, title: '랜덤 감도 볼륨', render: renderLevel2 },
+                { id: 3, title: '밑 빠진 독(펌프)', render: renderLevel3 },
+                { id: 4, title: '마음의 눈(3초)', render: renderLevel4 },
+                { id: 5, title: '보안 키패드', render: renderLevel5 },
+                { id: 6, title: '접촉 불량 버튼', render: renderLevel6 },
+                { id: 7, title: '색깔 반사 신경', render: renderLevel7 },
+                { id: 8, title: '광고의 늪', render: renderLevel8 },
+                { id: 9, title: '지뢰 찾기', render: renderLevel9 },
+                { id: 10, title: '지문 인식', render: renderLevel10 },
+            ];
+            state.levels = shuffleArray(rawLevels);
+            state.currentLevelIndex = 0;
+            state.view = 'playing';
+            loadLevel();
+        }
 
-                // 3. 로그인 시도
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+        // --- 게임 플레이 화면 (공통 프레임) ---
+        function loadLevel() {
+            clearAllTimers();
+            const level = state.levels[state.currentLevelIndex];
+            const progress = ((state.currentLevelIndex) / state.levels.length) * 100;
+
+            // 기본 프레임 렌더링
+            render(`
+                <div class="flex-1 flex flex-col bg-slate-100 p-4 pt-8 font-sans h-full relative">
+                    <!-- 상단 진행바 -->
+                    <div class="bg-white px-6 py-4 rounded-2xl shadow-sm flex items-center justify-between mb-4 z-10">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Progress</span>
+                        <div class="flex items-center gap-3 flex-1 ml-4">
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
+                            </div>
+                            <span class="text-sm font-bold text-blue-600 w-10 text-right">${state.currentLevelIndex + 1}/${state.levels.length}</span>
+                        </div>
+                    </div>
+
+                    <!-- 게임 영역 -->
+                    <div class="bg-white rounded-3xl shadow-xl overflow-hidden flex-1 flex flex-col relative border border-slate-100 z-0">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+                        <div class="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                            <h2 class="font-bold text-slate-700">Entry No. ${level.id}</h2>
+                            <span class="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-md font-bold">${level.title}</span>
+                        </div>
+                        <div id="game-content" class="flex-grow relative overflow-hidden">
+                            <!-- 개별 게임 컨텐츠 주입 -->
+                        </div>
+                    </div>
+
+                    <!-- 스킵 버튼 영역 -->
+                    <div id="skip-container" class="mt-4 w-full h-12"></div>
+
+                    <p class="text-center text-xs text-slate-400 pb-2 mt-2">
+                        * 팁: 진정하시고 손가락 끝에 집중하세요.
+                    </p>
+                </div>
+            `);
+
+            // 개별 게임 로직 실행
+            level.render(document.getElementById('game-content'));
+
+            // 스킵 버튼 로직 초기화
+            initSkipButton();
+        }
+
+        function nextLevel() {
+            if (state.currentLevelIndex < state.levels.length - 1) {
+                state.currentLevelIndex++;
+                loadLevel();
+            } else {
+                showVoting();
+            }
+        }
+
+        // --- 스킵 버튼 로직 ---
+        function initSkipButton() {
+            state.skipClickCount = 0;
+            const container = document.getElementById('skip-container');
+
+            // 7초 후 등장
+            const timer = setTimeout(() => {
+                renderSkipButton(container);
+            }, 7000);
+            state.timers.push(timer);
+        }
+
+        function renderSkipButton(container) {
+            const count = state.skipClickCount;
+            const required = 20;
+
+            let btnClass = count > 0
+                ? 'border-red-200 bg-red-50 text-red-500 active:scale-95'
+                : 'border-slate-200 bg-white text-slate-400 hover:bg-slate-50';
+
+            let html = `
+                <button id="btn-skip" class="w-full py-3 rounded-xl border-2 font-bold text-sm transition-all flex items-center justify-center gap-2 animate-fade-in ${btnClass}">
+                    ${count === 0
+                    ? `<i data-lucide="help-circle" class="w-4 h-4"></i> 너무 답답하신가요? (다음 단계로)`
+                    : `<span class="text-red-600 font-black text-lg">건너뛰기 승인 중... (${count}/${required})</span>`
+                }
+                </button>
+            `;
+
+            if (count > 0 && count < required) {
+                html += `<p class="text-[10px] text-center text-red-300 mt-1 animate-pulse-red">* 시스템 부하로 인해 여러 번 클릭해야 합니다.</p>`;
+            }
+
+            container.innerHTML = html;
+            lucide.createIcons();
+
+            document.getElementById('btn-skip').onclick = () => {
+                trackClick();
+                state.skipClickCount++;
+                if (state.skipClickCount >= required) {
+                    nextLevel();
                 } else {
-                    await signInAnonymously(auth);
+                    renderSkipButton(container); // 리렌더링
                 }
-
-                user = auth.currentUser;
-                if (user) {
-                    console.log("Logged in as:", user.uid);
-                    await loadUserData();
-                    subscribeToLeaderboard();
-                }
-
-                // 4. 클릭 이벤트 리스너 등록
-                setupHoldListeners();
-
-            } catch (e) {
-                console.error("Firebase Init Error:", e);
-                // 에러가 나도 게임은 가능하게 리스너 등록
-                setupHoldListeners();
-            }
+            };
         }
 
-        async function loadUserData() {
-            if (!user) return;
-            const userRef = doc(db, dbPath, user.uid);
-            try {
-                const snap = await getDoc(userRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    myTeam = data.team;
-                    attempts = data.attempts !== undefined ? data.attempts : 3;
-                    // 이미 팀이 있으면 UI 갱신 (모달 닫기)
-                    updateUI();
-                }
-            } catch (e) {
-                console.error("Error loading user data:", e);
+
+        // ==========================================
+        // 3. 개별 미니게임 로직
+        // ==========================================
+
+        // Level 1: 생년월일 노가다
+        function renderLevel1(el) {
+            let y = 1990, m = 1, d = 1;
+            const target = { y: 1999, m: 12, d: 31 };
+
+            function updateDisplay() {
+                document.getElementById('date-y').innerText = y;
+                document.getElementById('date-m').innerText = m;
+                document.getElementById('date-d').innerText = d;
             }
+
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full p-4">
+                    <h3 class="font-bold text-lg mb-2">생년월일 입력</h3>
+                    <p class="text-sm text-gray-500 mb-6">목표: <span class="text-blue-600 font-bold">1999년 12월 31일</span></p>
+                    <div class="flex gap-2 mb-8">
+                        <div class="flex flex-col items-center">
+                            <div id="date-y" class="w-20 h-12 flex items-center justify-center bg-gray-100 rounded border mb-2 font-mono text-lg font-bold">1990</div>
+                            <button id="btn-y" class="w-20 h-12 bg-white border-2 border-blue-200 rounded-lg active:bg-blue-100 active:scale-95 text-blue-600 font-bold">+1</button>
+                            <span class="text-xs text-gray-400 mt-1">년</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div id="date-m" class="w-20 h-12 flex items-center justify-center bg-gray-100 rounded border mb-2 font-mono text-lg font-bold">1</div>
+                            <button id="btn-m" class="w-20 h-12 bg-white border-2 border-blue-200 rounded-lg active:bg-blue-100 active:scale-95 text-blue-600 font-bold">+1</button>
+                            <span class="text-xs text-gray-400 mt-1">월</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div id="date-d" class="w-20 h-12 flex items-center justify-center bg-gray-100 rounded border mb-2 font-mono text-lg font-bold">1</div>
+                            <button id="btn-d" class="w-20 h-12 bg-white border-2 border-blue-200 rounded-lg active:bg-blue-100 active:scale-95 text-blue-600 font-bold">+1</button>
+                            <span class="text-xs text-gray-400 mt-1">일</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-red-400 mb-4">* 주의: 범위를 넘어가면 초기화됩니다.</p>
+                    <button id="btn-check" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">확인</button>
+                </div>
+            `;
+
+            document.getElementById('btn-y').onclick = () => { trackClick(); y++; if (y > 2000) y = 1990; updateDisplay(); };
+            document.getElementById('btn-m').onclick = () => { trackClick(); m++; if (m > 12) m = 1; updateDisplay(); };
+            document.getElementById('btn-d').onclick = () => { trackClick(); d++; if (d > 31) d = 1; updateDisplay(); };
+            document.getElementById('btn-check').onclick = () => {
+                trackClick();
+                if (y === target.y && m === target.m && d === target.d) nextLevel();
+                else alert("목표 날짜와 일치하지 않습니다.");
+            };
         }
 
-        // [핵심] 점수 업로드 로직 (누적 방식)
-        async function uploadScore(delta, isFinal = false) {
-            if (!user) return;
-            if (delta === 0 && !isFinal) return; // 보낼 점수 없으면 스킵
+        // Level 2: 랜덤 볼륨
+        function renderLevel2(el) {
+            let vol = 50;
+            const target = 75;
 
-            const userRef = doc(db, dbPath, user.uid);
-            const payload = {
-                uid: user.uid,
-                team: myTeam,
-                // increment(delta)를 사용하면 서버의 기존 점수에 delta만큼 더해짐
-                // 예: 기존 100 + 12(꾹누름) = 112. 클릭 수 손실 없음.
-                totalScore: increment(delta),
-                name: `Soldier-${user.uid.slice(0, 5)}`
+            function updateDisplay() {
+                document.getElementById('vol-display').innerText = vol;
+            }
+
+            function changeVol(dir) {
+                trackClick();
+                const jump = Math.floor(Math.random() * 15) + 1;
+                vol = (dir === 'up') ? vol + jump : vol - jump;
+                if (vol < 0) vol = 0; if (vol > 100) vol = 100;
+                updateDisplay();
+            }
+
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full px-6">
+                    <i data-lucide="volume-2" class="w-10 h-10 text-gray-400 mb-4"></i>
+                    <h3 class="font-bold mb-6">볼륨 미세 조정</h3>
+                    <p class="mb-8">정확히 <span class="text-red-500 font-black text-xl">${target}</span>에 맞추세요.</p>
+                    <div id="vol-display" class="text-5xl font-mono font-bold text-indigo-600 mb-8">50</div>
+                    <div class="flex gap-4 w-full">
+                        <button id="btn-down" class="flex-1 bg-red-100 text-red-600 py-6 rounded-xl font-bold active:bg-red-200">DOWN</button>
+                        <button id="btn-up" class="flex-1 bg-blue-100 text-blue-600 py-6 rounded-xl font-bold active:bg-blue-200">UP</button>
+                    </div>
+                    <button id="btn-ok" class="mt-8 w-full bg-gray-800 text-white py-3 rounded-xl font-bold">설정 완료</button>
+                </div>
+            `;
+            lucide.createIcons();
+
+            document.getElementById('btn-down').onclick = () => changeVol('down');
+            document.getElementById('btn-up').onclick = () => changeVol('up');
+            document.getElementById('btn-ok').onclick = () => {
+                trackClick();
+                if (vol === target) nextLevel();
+                else alert(`현재: ${vol} / 목표: ${target}`);
+            };
+        }
+
+        // Level 3: 펌프
+        function renderLevel3(el) {
+            let progress = 0;
+
+            const timer = setInterval(() => {
+                progress = Math.max(0, progress - 2);
+                updateBar();
+            }, 50);
+            state.timers.push(timer);
+
+            function updateBar() {
+                const bar = document.getElementById('pump-bar');
+                if (bar) bar.style.width = `${progress}%`;
+                const icon = document.getElementById('pump-icon');
+                if (icon) {
+                    if (progress > 80) icon.classList.replace('text-gray-400', 'text-green-500');
+                    else icon.classList.replace('text-green-500', 'text-gray-400');
+                }
+            }
+
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full px-6 text-center no-select">
+                    <i id="pump-icon" data-lucide="battery-charging" class="w-10 h-10 text-gray-400 mb-4 transition-colors"></i>
+                    <h3 class="font-bold mb-2">수동 충전기</h3>
+                    <p class="text-sm text-gray-500 mb-6">게이지가 줄어들기 전에<br>연타해서 100%를 만드세요.</p>
+                    <div class="w-full h-8 bg-gray-200 rounded-full overflow-hidden mb-8 border border-gray-300">
+                        <div id="pump-bar" class="h-full bg-green-500 transition-all duration-75 ease-linear" style="width: 0%"></div>
+                    </div>
+                    <button id="btn-tap" class="w-32 h-32 rounded-full bg-red-500 text-white font-bold text-xl shadow-[0_6px_0_rgb(185,28,28)] active:shadow-none active:translate-y-[6px] transition-all flex items-center justify-center">
+                        TAP!
+                    </button>
+                </div>
+            `;
+            lucide.createIcons();
+
+            const btn = document.getElementById('btn-tap');
+            const handleTap = (e) => {
+                e.preventDefault();
+                trackClick();
+                progress += 5;
+                if (progress >= 100) nextLevel();
+                updateBar();
+            };
+            btn.addEventListener('mousedown', handleTap);
+            btn.addEventListener('touchstart', handleTap);
+        }
+
+        // Level 4: 블라인드 타이머
+        function renderLevel4(el) {
+            let startTime = 0;
+            let pressing = false;
+
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full px-6 select-none">
+                    <i data-lucide="rotate-ccw" class="w-10 h-10 text-orange-500 mb-4"></i>
+                    <h3 class="font-bold mb-2">마음의 눈</h3>
+                    <p class="text-sm text-gray-500 mb-8 text-center">3초 동안 누르고 있다가 떼세요.<br>(시계 없음)</p>
+                    <button id="btn-timer" class="w-full py-12 rounded-xl text-xl font-bold transition-all bg-orange-100 text-orange-600">
+                        누르고 있으세요
+                    </button>
+                </div>
+            `;
+            lucide.createIcons();
+
+            const btn = document.getElementById('btn-timer');
+
+            const start = (e) => {
+                e.preventDefault();
+                trackClick();
+                pressing = true;
+                startTime = Date.now();
+                btn.innerText = "...";
+                btn.classList.replace('bg-orange-100', 'bg-orange-600');
+                btn.classList.replace('text-orange-600', 'text-white');
+                btn.classList.add('scale-95');
             };
 
-            if (isFinal) {
-                payload.lastSession = sessionScore;
-                payload.attempts = attempts;
-            }
+            const end = (e) => {
+                e.preventDefault();
+                if (!pressing) return;
+                pressing = false;
+                const duration = (Date.now() - startTime) / 1000;
 
-            try {
-                await setDoc(userRef, payload, { merge: true });
-            } catch (e) {
-                console.error("Save error:", e);
-            }
+                btn.classList.replace('bg-orange-600', 'bg-orange-100');
+                btn.classList.replace('text-white', 'text-orange-600');
+                btn.classList.remove('scale-95');
+                btn.innerText = "누르고 있으세요";
+
+                if (duration >= 3.0 && duration <= 3.5) nextLevel();
+                else alert(`실패! 기록: ${duration.toFixed(2)}초.\n3.0~3.5초 사이를 노리세요.`);
+            };
+
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', end);
+            btn.addEventListener('touchstart', start);
+            btn.addEventListener('touchend', end);
         }
 
-        function subscribeToLeaderboard() {
-            if (!user) return;
-            const colRef = collection(db, dbPath);
+        // Level 5: 보안 키패드
+        function renderLevel5(el) {
+            let input = "";
+            let keys = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+            const target = "2580";
 
-            // 실시간 데이터 수신
-            onSnapshot(colRef, (snapshot) => {
-                let allDocs = [];
-                let insideTotal = 0;
-                let outsideTotal = 0;
-
-                snapshot.forEach(doc => {
-                    const d = doc.data();
-                    allDocs.push(d);
-                    // 팀별 점수 합산
-                    if (d.team === 'inside') insideTotal += (d.totalScore || 0);
-                    if (d.team === 'outside') outsideTotal += (d.totalScore || 0);
+            function renderKeys() {
+                const container = document.getElementById('keypad-grid');
+                container.innerHTML = '';
+                keys.forEach(k => {
+                    const btn = document.createElement('button');
+                    btn.className = "bg-white border-b-4 border-slate-200 active:border-b-0 active:mt-1 h-16 rounded-lg text-xl font-bold text-slate-700 shadow-sm";
+                    btn.innerText = k;
+                    btn.onclick = () => handleKey(k);
+                    container.appendChild(btn);
                 });
+            }
 
-                // 세력전 바 업데이트
-                const totalWar = insideTotal + outsideTotal;
-                if (totalWar > 0) {
-                    const inPct = (insideTotal / totalWar) * 100;
-                    const outPct = (outsideTotal / totalWar) * 100;
-                    els.barInside.style.width = `${inPct}%`;
-                    els.barOutside.style.width = `${outPct}%`;
-                    els.barInside.innerText = `벽 안 ${Math.round(inPct)}%`;
-                    els.barOutside.innerText = `벽 밖 ${Math.round(outPct)}%`;
+            function handleKey(num) {
+                trackClick();
+                input += num;
+                document.getElementById('keypad-display').innerText = input.padEnd(4, '*');
+
+                if (input === target) nextLevel();
+                else if (input.length >= 4) {
+                    setTimeout(() => { alert("오답! 초기화."); input = ""; document.getElementById('keypad-display').innerText = "****"; }, 100);
                 }
 
-                // 랭킹 정렬
-                allDocs.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+                keys = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]); // 셔플
+                renderKeys();
+            }
 
-                // 상위 10명 표시
-                els.leaderboardList.innerHTML = '';
-                allDocs.slice(0, 10).forEach((p, index) => {
-                    const isMe = p.uid === user.uid;
-                    const teamIcon = p.team === 'inside' ? '🛡️' : '⚔️';
-                    const row = document.createElement('div');
-                    row.className = `rank-item ${isMe ? 'my-rank' : ''}`;
-                    row.innerHTML = `
-                    <span>#${index + 1} ${teamIcon} ${p.name || 'Soldier'}</span>
-                    <span>${p.totalScore || 0}</span>
-                `;
-                    els.leaderboardList.appendChild(row);
-                });
-                document.getElementById('uidDisplay').innerText = user.uid.slice(0, 8) + "...";
-            }, (error) => {
-                console.error("Leaderboard subscription error:", error);
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full px-4">
+                    <i data-lucide="lock" class="w-10 h-10 text-slate-600 mb-4"></i>
+                    <h3 class="font-bold mb-2">보안 키패드</h3>
+                    <p class="text-sm text-gray-500 mb-6">비밀번호: <span class="text-blue-600 font-bold">${target}</span></p>
+                    <div id="keypad-display" class="w-full bg-gray-100 p-4 rounded-lg mb-4 text-center text-2xl tracking-[1em] h-16 flex items-center justify-center font-bold">****</div>
+                    <div id="keypad-grid" class="grid grid-cols-3 gap-2 w-full max-w-[300px]"></div>
+                </div>
+            `;
+            lucide.createIcons();
+            renderKeys();
+        }
+
+        // Level 6: 고장난 버튼
+        function renderLevel6(el) {
+            let count = 0;
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full px-6">
+                    <i data-lucide="zap" class="w-10 h-10 text-yellow-500 mb-4"></i>
+                    <h3 class="font-bold mb-2">접촉 불량</h3>
+                    <p class="text-sm text-gray-500 mb-8">작동할 때까지 누르세요 (<span id="broken-count">0</span>/5)</p>
+                    <button id="broken-btn" class="w-full py-8 bg-slate-200 text-slate-400 font-bold rounded shadow-inner active:bg-slate-300 active:scale-[0.99] transition-transform select-none">
+                        작동시키기
+                    </button>
+                </div>
+            `;
+            lucide.createIcons();
+
+            document.getElementById('broken-btn').onclick = () => {
+                trackClick();
+                if (Math.random() < 0.2) {
+                    count++;
+                    document.getElementById('broken-count').innerText = count;
+                    if (count >= 5) nextLevel();
+                }
+            };
+        }
+
+        // Level 7: 스트룹
+        function renderLevel7(el) {
+            let stage = 0;
+            const quizzes = [
+                { text: "빨강", colorClass: "text-blue-600", answer: "blue" },
+                { text: "초록", colorClass: "text-red-600", answer: "red" },
+                { text: "파랑", colorClass: "text-yellow-500", answer: "yellow" },
+            ];
+
+            function renderQuiz() {
+                const q = quizzes[stage];
+                const quizText = document.getElementById('stroop-text');
+                quizText.innerText = q.text;
+                quizText.className = `text-6xl font-black mb-12 ${q.colorClass}`;
+                document.getElementById('stroop-stage').innerText = `${stage + 1}/3`;
+            }
+
+            function handleAnswer(val) {
+                trackClick();
+                if (val === quizzes[stage].answer) {
+                    if (stage < 2) {
+                        stage++;
+                        renderQuiz();
+                    } else nextLevel();
+                } else {
+                    alert("틀렸습니다! 글자 색을 누르세요.");
+                    stage = 0;
+                    renderQuiz();
+                }
+            }
+
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full px-4">
+                    <i data-lucide="target" class="w-10 h-10 text-purple-500 mb-4"></i>
+                    <h3 class="font-bold mb-2">색깔 반사 신경 (<span id="stroop-stage">1/3</span>)</h3>
+                    <p class="text-sm text-gray-500 mb-8"><span class="font-bold text-black underline">글자 색상</span> 버튼을 누르세요.</p>
+                    <div id="stroop-text" class="text-6xl font-black mb-12"></div>
+                    <div class="grid grid-cols-2 gap-4 w-full">
+                        <button class="bg-red-500 text-white font-bold h-20 rounded-xl shadow-lg active:scale-95 transition-transform" onclick="window.handleStroop('red')">빨강색</button>
+                        <button class="bg-blue-600 text-white font-bold h-20 rounded-xl shadow-lg active:scale-95 transition-transform" onclick="window.handleStroop('blue')">파랑색</button>
+                        <button class="bg-green-600 text-white font-bold h-20 rounded-xl shadow-lg active:scale-95 transition-transform" onclick="window.handleStroop('green')">초록색</button>
+                        <button class="bg-yellow-500 text-white font-bold h-20 rounded-xl shadow-lg active:scale-95 transition-transform" onclick="window.handleStroop('yellow')">노랑색</button>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+
+            // 전역 스코프에 핸들러 등록 (HTML onclick 용)
+            window.handleStroop = handleAnswer;
+            renderQuiz();
+        }
+
+        // Level 8: 광고
+        function renderLevel8(el) {
+            el.innerHTML = `
+                <div class="relative w-full h-80 bg-slate-800 rounded-xl overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-4">
+                    <div class="absolute inset-0 bg-gradient-to-br from-purple-600 to-blue-600 opacity-90"></div>
+                    <div class="relative z-10 text-white">
+                        <h2 class="text-3xl font-black text-yellow-300 animate-bounce mb-2">당첨 축하!!</h2>
+                        <p class="mb-6">아이폰 50 Pro Max 당첨!</p>
+                        <button id="fake-btn-1" class="bg-green-500 text-white font-bold py-3 px-8 rounded-full shadow-lg transform active:scale-90 transition-transform">수령하기</button>
+                    </div>
+                    <div id="fake-btn-2" class="absolute top-2 right-2 text-white/60 bg-black/20 p-1 rounded cursor-pointer z-20">
+                        <div class="border border-white/50 px-1 text-[10px]">AD</div>
+                    </div>
+                    <div id="fake-btn-3" class="absolute top-2 left-2 text-white cursor-pointer z-20 font-bold">X</div>
+                    <button id="real-close-btn" class="absolute bottom-1 right-1 w-6 h-6 flex items-center justify-center text-[10px] text-white/30 bg-black/10 z-30">닫기</button>
+                </div>
+            `;
+
+            const fakeAction = (msg) => { trackClick(); alert(msg); };
+            document.getElementById('fake-btn-1').onclick = () => fakeAction("낚였습니다.");
+            document.getElementById('fake-btn-2').onclick = () => fakeAction("가짜 광고");
+            document.getElementById('fake-btn-3').onclick = () => fakeAction("이미지를 클릭했습니다.");
+            document.getElementById('real-close-btn').onclick = () => { trackClick(); nextLevel(); };
+        }
+
+        // Level 9: 룰렛
+        function renderLevel9(el) {
+            const safeIndex = Math.floor(Math.random() * 6);
+
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full px-4">
+                    <i data-lucide="siren" class="w-10 h-10 text-red-500 mb-4"></i>
+                    <h3 class="font-bold mb-2">지뢰 찾기</h3>
+                    <p class="text-sm text-gray-500 mb-8">6개 중 1개만 정답입니다.</p>
+                    <div class="grid grid-cols-2 gap-4 w-full">
+                        ${[0, 1, 2, 3, 4, 5].map(i => `
+                            <button id="roulette-${i}" class="h-20 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 active:bg-red-50 font-bold text-gray-400 text-xl">?</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+
+            [0, 1, 2, 3, 4, 5].forEach(i => {
+                document.getElementById(`roulette-${i}`).onclick = () => {
+                    trackClick();
+                    if (i === safeIndex) nextLevel();
+                    else alert("꽝! 다시 고르세요.");
+                };
             });
         }
 
-        // --- Game Logic ---
-        window.startGame = () => {
-            if (attempts <= 0) {
-                openRefillModal();
-                return;
-            }
-            if (sessionActive) return;
+        // Level 10: 지문 인식
+        function renderLevel10(el) {
+            let progress = 0;
+            let scanning = false;
+            let interval = null;
 
-            sessionActive = true;
-            sessionScore = 0;
-            uncommittedScore = 0;
-            timeLeft = 30;
-            attempts--;
+            function updateUI() {
+                const bar = document.getElementById('scan-bar');
+                const icon = document.getElementById('scan-icon');
+                const btn = document.getElementById('scan-btn');
 
-            // UI 즉시 반영
-            updateUI();
+                if (bar) bar.style.width = `${progress}%`;
 
-            els.startBtn.disabled = true;
-            els.startBtn.innerText = "전투 중...";
-            els.clickBtn.disabled = false;
-            els.clickBtn.innerHTML = "<span style='font-size:1rem'>구축하라!</span><br>HOLD / CLICK!";
-
-            // [중요] 1초마다 쌓인 점수(uncommittedScore)를 서버로 전송
-            syncInterval = setInterval(() => {
-                if (uncommittedScore > 0) {
-                    uploadScore(uncommittedScore, false);
-                    uncommittedScore = 0; // 보냈으니 초기화
-                }
-            }, 1000);
-
-            // 게임 타이머
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                updateUI();
-                if (timeLeft <= 0) {
-                    endGame();
-                }
-            }, 1000);
-        };
-
-        function endGame() {
-            clearInterval(timerInterval);
-            clearInterval(syncInterval); // 동기화 중지
-            endHold();
-
-            sessionActive = false;
-            els.clickBtn.disabled = true;
-            els.clickBtn.innerText = "작전 종료";
-            els.startBtn.disabled = false;
-            els.startBtn.innerText = "다음 작전 개시 (30초)";
-
-            // 남은 자투리 점수 최종 전송
-            if (uncommittedScore > 0) {
-                uploadScore(uncommittedScore, true);
-                uncommittedScore = 0;
-            } else {
-                uploadScore(0, true); // 시도 횟수 차감만 저장
-            }
-
-            alert(`작전 종료!\n이번 토벌 수: ${sessionScore}`);
-            updateUI();
-        }
-
-        // --- Hold / Click Logic ---
-        function setupHoldListeners() {
-            const btn = els.clickBtn;
-
-            // 마우스
-            btn.addEventListener('mousedown', startHold);
-            document.addEventListener('mouseup', endHold);
-            btn.addEventListener('mouseleave', endHold);
-
-            // 터치 (모바일)
-            btn.addEventListener('touchstart', (e) => {
-                // 스크롤 방지
-                if (e.cancelable) e.preventDefault();
-                startHold(e);
-            }, { passive: false });
-
-            document.addEventListener('touchend', endHold);
-            document.addEventListener('touchcancel', endHold);
-        }
-
-        function startHold(e) {
-            if (!sessionActive) return;
-            registerClick(e); // 누르자마자 1회
-
-            if (holdTimer === null) {
-                // 누르고 있으면 0.08초마다 계속 실행
-                holdTimer = setInterval(() => { registerClick(); }, HOLD_INTERVAL);
-            }
-        }
-
-        function endHold() {
-            if (holdTimer !== null) {
-                clearInterval(holdTimer);
-                holdTimer = null;
-            }
-        }
-
-        function registerClick(e) {
-            if (!sessionActive) return;
-
-            sessionScore++;      // 화면 표시용
-            uncommittedScore++;  // 서버 전송 대기용
-            els.sessionScore.innerText = sessionScore;
-
-            // 이펙트 생성
-            const btn = els.clickBtn;
-            let x, y;
-
-            if (e && (e.clientX || (e.touches && e.touches[0]))) {
-                const clientX = e.clientX || e.touches[0].clientX;
-                const clientY = e.clientY || e.touches[0].clientY;
-                const rect = btn.getBoundingClientRect();
-                x = clientX - rect.left;
-                y = clientY - rect.top;
-            } else {
-                // 자동 클릭 시 랜덤 위치 타격
-                const rect = btn.getBoundingClientRect();
-                x = Math.random() * rect.width;
-                y = Math.random() * rect.height;
-            }
-
-            const slash = document.createElement('div');
-            slash.className = 'slash-effect';
-            slash.style.top = `${y}px`;
-            slash.style.left = `${x - 100}px`;
-            slash.style.transform = `rotate(${Math.random() * 360}deg)`;
-
-            btn.appendChild(slash);
-            setTimeout(() => slash.remove(), 300);
-
-            // 모바일 진동
-            if (navigator.vibrate) navigator.vibrate(5);
-        }
-
-        window.openRefillModal = () => {
-            els.refillModal.classList.remove('hidden');
-            let refillTime = 5;
-            const refillBtnAction = document.getElementById('refillActionBtn');
-            refillBtnAction.disabled = true;
-            refillBtnAction.innerText = `보급품 도착까지 ${refillTime}초`;
-
-            const intv = setInterval(() => {
-                refillTime--;
-                refillBtnAction.innerText = `보급품 도착까지 ${refillTime}초`;
-                if (refillTime <= 0) {
-                    clearInterval(intv);
-                    refillBtnAction.disabled = false;
-                    refillBtnAction.innerText = "가스/칼날 보급 받기 (완료)";
-                }
-            }, 1000);
-        };
-
-        window.confirmRefill = () => {
-            attempts = 3;
-            // 시도 횟수 리필 저장
-            uploadScore(0, true);
-            els.refillModal.classList.add('hidden');
-            updateUI();
-        };
-
-        function updateUI() {
-            els.timeLeft.innerText = timeLeft;
-            els.sessionScore.innerText = sessionScore;
-            els.attempts.innerText = attempts;
-
-            if (myTeam) {
-                els.teamName.innerHTML = myTeam === 'inside'
-                    ? "<span class='text-inside'>🛡️ 헌병단 (벽 안)</span>"
-                    : "<span class='text-outside'>⚔️ 조사병단 (벽 밖)</span>";
-                // [수정됨] 팀이 있으면 모달을 확실히 닫음
-                els.surveyModal.classList.add('hidden');
-
-                if (myTeam === 'inside') {
-                    els.clickBtn.style.borderColor = 'var(--inside-gold)';
+                if (scanning) {
+                    icon.classList.add('text-blue-500', 'animate-pulse');
+                    icon.classList.remove('text-gray-300');
+                    btn.classList.add('border-blue-500', 'bg-blue-50', 'scale-95');
+                    btn.classList.remove('border-gray-300', 'bg-white');
                 } else {
-                    els.clickBtn.style.borderColor = 'var(--outside-green)';
+                    icon.classList.remove('text-blue-500', 'animate-pulse');
+                    icon.classList.add('text-gray-300');
+                    btn.classList.remove('border-blue-500', 'bg-blue-50', 'scale-95');
+                    btn.classList.add('border-gray-300', 'bg-white');
                 }
             }
 
-            if (attempts <= 0) {
-                els.refillBtn.classList.remove('hidden');
-            } else {
-                els.refillBtn.classList.add('hidden');
-            }
+            const startScan = (e) => {
+                e.preventDefault();
+                trackClick();
+                scanning = true;
+                updateUI();
+                interval = setInterval(() => {
+                    progress += (Math.random() > 0.7 ? 0 : 2);
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        nextLevel();
+                    }
+                    updateUI();
+                }, 50);
+            };
+
+            const stopScan = (e) => {
+                if (e) e.preventDefault();
+                scanning = false;
+                clearInterval(interval);
+                progress = 0;
+                updateUI();
+            };
+
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full px-4 select-none">
+                    <i id="scan-icon" data-lucide="fingerprint" class="w-14 h-14 mb-6 transition-colors text-gray-300"></i>
+                    <h3 class="font-bold mb-2">본인 인증</h3>
+                    <p class="text-sm text-gray-500 mb-8">100%가 될 때까지 꾹 누르세요.</p>
+                    <div class="w-full h-4 bg-gray-200 rounded-full mb-8 overflow-hidden">
+                        <div id="scan-bar" class="h-full bg-blue-500 transition-all duration-75" style="width: 0%"></div>
+                    </div>
+                    <button id="scan-btn" class="w-24 h-24 rounded-full border-4 flex items-center justify-center transition-all border-gray-300 bg-white">
+                        <i data-lucide="fingerprint" class="w-10 h-10 text-gray-300"></i>
+                    </button>
+                </div>
+            `;
+            lucide.createIcons();
+
+            const btn = document.getElementById('scan-btn');
+            btn.addEventListener('mousedown', startScan);
+            btn.addEventListener('mouseup', stopScan);
+            btn.addEventListener('mouseleave', stopScan);
+            btn.addEventListener('touchstart', startScan);
+            btn.addEventListener('touchend', stopScan);
         }
 
-        // --- Survey Logic ---
-        let qIndex = 0;
-        let scores = { inside: 0, outside: 0 };
-        const questions = [
-            { q: "거인이 벽을 부수고 들어왔다. 당신의 행동은?", a: "가족과 함께 가장 안전한 내지로 피한다.", b: "무기를 들고 거인에게 맞서 싸운다.", aScore: 'inside', bScore: 'outside' },
-            { q: "당신이 생각하는 '평화'란?", a: "견고한 벽 안에서 질서가 유지되는 것.", b: "위험하더라도 벽 밖의 진실을 아는 것.", aScore: 'inside', bScore: 'outside' },
-            { q: "지급받고 싶은 장비는?", a: "헌병단의 소총 (치안 유지)", b: "입체기동장치와 칼날 (거인 토벌)", aScore: 'inside', bScore: 'outside' }
-        ];
+        // --- 투표 화면 ---
+        function showVoting() {
+            clearAllTimers();
+            state.view = 'voting';
 
-        function showSurvey() {
-            els.surveyModal.classList.remove('hidden');
-            renderQuestion();
+            const listHtml = state.levels.map(level => `
+                <label class="flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all border-slate-100 hover:bg-slate-50" id="vote-label-${level.id}" onclick="selectVote(${level.id})">
+                    <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 border-slate-300" id="vote-circle-${level.id}">
+                        <div class="w-3 h-3 bg-indigo-600 rounded-full hidden" id="vote-dot-${level.id}"></div>
+                    </div>
+                    <input type="radio" name="vote" value="${level.id}" class="hidden">
+                    <div>
+                        <p class="font-bold text-slate-700" id="vote-text-${level.id}">${level.title}</p>
+                        <p class="text-xs text-slate-400">Entry No. ${level.id}</p>
+                    </div>
+                </label>
+            `).join('');
+
+            render(`
+                <div class="flex-1 flex flex-col bg-slate-50 overflow-hidden">
+                    <div class="bg-indigo-600 p-6 text-white text-center shrink-0">
+                        <h1 class="text-xl font-bold">체험 종료!</h1>
+                        <p class="opacity-80 text-sm mt-1">최악의 사용자 경험(UX)에 투표하세요.</p>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-grow hide-scrollbar">
+                        <div class="space-y-3">
+                            ${listHtml}
+                        </div>
+                    </div>
+                    <div class="p-6 border-t border-slate-100 shrink-0 bg-white">
+                        <button onclick="submitVote()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95">
+                            <i data-lucide="send" class="w-5 h-5"></i> 투표 제출하기
+                        </button>
+                    </div>
+                </div>
+            `);
         }
 
-        function renderQuestion() {
-            if (qIndex >= questions.length) {
-                finishSurvey();
-                return;
-            }
-            const curr = questions[qIndex];
-            els.surveyQ.innerText = curr.q;
-            els.optA.innerText = curr.a;
-            els.optB.innerText = curr.b;
-        }
+        function selectVote(id) {
+            trackClick();
+            state.selectedVote = id;
 
-        window.answerSurvey = (choice) => {
-            const curr = questions[qIndex];
-            if (choice === 'A') scores[curr.aScore]++;
-            else scores[curr.bScore]++;
+            // UI 업데이트
+            state.levels.forEach(l => {
+                const label = document.getElementById(`vote-label-${l.id}`);
+                const circle = document.getElementById(`vote-circle-${l.id}`);
+                const dot = document.getElementById(`vote-dot-${l.id}`);
+                const text = document.getElementById(`vote-text-${l.id}`);
 
-            qIndex++;
-            renderQuestion();
-        };
-
-        async function finishSurvey() {
-            // 1. 팀 결정
-            myTeam = scores.inside > scores.outside ? 'inside' : 'outside';
-
-            // 2. UI 즉시 갱신 (화면 전환)
-            updateUI();
-
-            // 3. 서버에 유저 정보 생성 (실패해도 로컬 진행)
-            if (user) {
-                try {
-                    await setDoc(doc(db, dbPath, user.uid), {
-                        uid: user.uid,
-                        team: myTeam,
-                        totalScore: 0,
-                        attempts: 3,
-                        name: `Recruit-${user.uid.slice(0, 4)}`
-                    });
-                } catch (e) {
-                    console.warn("Offline Mode: Proceeding without server sync");
+                if (l.id === id) {
+                    label.classList.add('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-200', 'ring-offset-1');
+                    label.classList.remove('border-slate-100', 'hover:bg-slate-50');
+                    circle.classList.replace('border-slate-300', 'border-indigo-600');
+                    dot.classList.remove('hidden');
+                    text.classList.replace('text-slate-700', 'text-indigo-900');
+                } else {
+                    label.classList.remove('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-200', 'ring-offset-1');
+                    label.classList.add('border-slate-100', 'hover:bg-slate-50');
+                    circle.classList.replace('border-indigo-600', 'border-slate-300');
+                    dot.classList.add('hidden');
+                    text.classList.replace('text-indigo-900', 'text-slate-700');
                 }
-            }
+            });
         }
 
-        // --- Init ---
-        init();
+        function submitVote() {
+            trackClick();
+            if (state.selectedVote) showResult();
+            else alert("하나를 선택해주세요!");
+        }
 
+        // --- 결과 화면 ---
+        function showResult() {
+            clearAllTimers();
+            const votedItem = state.levels.find(l => l.id === state.selectedVote);
+
+            render(`
+                <div class="flex-1 flex flex-col items-center justify-center p-6 font-sans text-center bg-slate-100">
+                    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8">
+                        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl animate-bounce">🗳️</div>
+                        <h2 class="text-2xl font-bold mb-2 text-slate-800">투표가 완료되었습니다!</h2>
+                        <div class="my-8">
+                            <p class="text-slate-500 mb-2">당신이 선택한 최악의 UI:</p>
+                            <div class="inline-block bg-slate-100 px-6 py-3 rounded-full font-bold text-slate-800 border border-slate-200">
+                                ${votedItem ? votedItem.title : '???'}
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-400 mb-8 leading-relaxed">여러분의 소중한 분노가<br>더 나은(혹은 더 나쁜) UI 연구에 활용됩니다.</p>
+                        <button onclick="showIntro()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-900 transition-colors">
+                            <i data-lucide="refresh-ccw" class="w-4 h-4"></i> 처음으로 돌아가기
+                        </button>
+                    </div>
+                </div>
+            `);
+        }
     </script>
-
-    <main>
-        <div class="steam-bg"></div>
-
-        <header>
-            <h1>CLICK ON TITAN</h1>
-            <div id="teamName" class="team-badge">소속 심사 중...</div>
-        </header>
-
-        <div style="font-size:0.8rem; margin-bottom:5px; color:#aaa; display:flex; justify-content:space-between;">
-            <span>🛡️ WALL SINA</span>
-            <span>WALL MARIA ⚔️</span>
-        </div>
-        <div class="war-status">
-            <div id="barInside" class="bar-segment bar-inside" style="width: 50%">50%</div>
-            <div id="barOutside" class="bar-segment bar-outside" style="width: 50%">50%</div>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">남은 시간</div>
-                <div class="stat-value"><span id="timeLeft" class="red-text">30</span>s</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">현재 토벌 수</div>
-                <div class="stat-value" id="sessionScore">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">남은 작전 횟수</div>
-                <div class="stat-value"><span id="attempts">3</span>회</div>
-            </div>
-        </div>
-
-        <div class="action-area">
-            <!-- 버튼 클릭 이벤트는 JS에서 리스너로 등록됨 -->
-            <button id="clickBtn" disabled>
-                작전 대기 중<br>
-                <small style="font-size:0.8rem; font-weight:normal">Waiting for orders...</small>
-            </button>
-
-            <div class="btn-group">
-                <button id="startBtn" class="sub-btn" onclick="startGame()">작전 개시 (30초)</button>
-                <button id="refillBtn" class="sub-btn hidden" onclick="openRefillModal()">가스/칼날 보급</button>
-            </div>
-        </div>
-
-        <div class="leaderboard">
-            <h3>🏆 정예 병사 순위 (실시간)</h3>
-            <div id="leaderboardList">
-                <div style="text-align:center; color:#777; padding:10px;">통신 연결 중...</div>
-            </div>
-        </div>
-        <div style="text-align:center; margin-top:10px; font-size:0.7rem; color:#555;">
-            UID: <span id="uidDisplay">Anonymous</span> | Attack on Titan Fan Game
-        </div>
-    </main>
-
-    <div id="surveyModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2 style="margin-top:0; color:#ddd;">병단 입단 심사</h2>
-            <p style="color:#aaa; font-size:0.9rem;">당신의 성향에 따라 소속이 결정됩니다.</p>
-
-            <h3 id="surveyQuestion" style="margin: 20px 0; min-height:50px;">질문 로딩중...</h3>
-
-            <div id="optA" class="survey-option" onclick="answerSurvey('A')">A</div>
-            <div id="optB" class="survey-option" onclick="answerSurvey('B')">B</div>
-        </div>
-    </div>
-
-    <div id="refillModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2 style="margin-top:0;">보급품 요청</h2>
-            <p style="color:#aaa; font-size:0.9rem;">
-                가스와 칼날이 모두 소진되었습니다.<br>
-                본부에서 보급품이 올 때까지 대기하십시오.
-            </p>
-            <div style="background:#222; padding:20px; margin:15px 0; border-radius:4px;">
-                ⏳ 보급 마차 이동 중...
-            </div>
-            <button id="refillActionBtn" class="sub-btn" style="width:100%" disabled>대기 중...</button>
-            <button class="sub-btn" style="width:100%; margin-top:10px; background:transparent; border:none;"
-                onclick="confirmRefill()">완료</button>
-        </div>
-    </div>
-
 </body>
 
 </html>
