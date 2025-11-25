@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Wall Battle: 진격의 클릭</title>
-    <!-- 모바일 최적화: 확대 방지 -->
+    <!-- 모바일 최적화: 확대/더블탭 방지 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <!-- 구글 폰트 -->
@@ -17,9 +17,9 @@
             --steam-color: #e0e0e0;
             --blood-color: #8a0c0c;
             --outside-green: #2d5a27;
-            /* 조사병단 망토색 */
+            /* 조사병단 */
             --inside-gold: #cfaa48;
-            /* 헌병단 문양색 */
+            /* 헌병단 */
             --bg-dark: #0f0f12;
             --text-light: #f0f0f0;
         }
@@ -27,10 +27,12 @@
         * {
             box-sizing: border-box;
             -webkit-user-select: none;
+            /* 텍스트 선택 방지 */
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
             touch-action: manipulation;
+            /* 더블탭 확대 방지 */
         }
 
         body {
@@ -103,7 +105,7 @@
             justify-content: center;
             font-size: 10px;
             white-space: nowrap;
-            transition: width 1s ease;
+            transition: width 0.5s ease;
         }
 
         .bar-inside {
@@ -188,6 +190,7 @@
             filter: grayscale(100%);
         }
 
+        /* 이펙트: 베기 효과 */
         .slash-effect {
             position: absolute;
             width: 100%;
@@ -355,22 +358,29 @@
         import { getFirestore, collection, doc, setDoc, getDocs, onSnapshot, updateDoc, increment, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuration ---
-        const firebaseConfig = JSON.parse(new URLSearchParams(window.location.search).get('firebase_config') || '{}') || {};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
-        const dbPath = `artifacts/${appId}/public/data/titans_click_battle`;
+        const firebaseConfig = {
+            apiKey: "AIzaSyD86RR_sJufh804b4_Omtsac-6jZyOND1k",
+            authDomain: "projecttitan-ff.firebaseapp.com",
+            projectId: "projecttitan-ff",
+            storageBucket: "projecttitan-ff.firebasestorage.app",
+            messagingSenderId: "481151110136",
+            appId: "1:481151110136:web:b8d69f38e61ad0ca87240d"
+        };
 
         // --- State ---
         let db, auth, user;
         let myTeam = null;
         let sessionActive = false;
-        let timeLeft = 30;
+        let timeLeft = 30; // 30초 게임
         let sessionScore = 0;
+        let uncommittedScore = 0; // 서버 전송 대기 중인 점수
         let attempts = 3;
         let timerInterval;
+        let syncInterval;
 
-        // Hold click vars
+        // 연속 클릭(Hold) 변수
         let holdTimer = null;
-        const HOLD_INTERVAL = 80;
+        const HOLD_INTERVAL = 80; // 0.08초마다 클릭 인정
 
         // --- Elements ---
         const els = {
@@ -395,14 +405,16 @@
         async function init() {
             const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
-            // Initial setup assuming offline/loading
+            // 1. UI 초기화 (오프라인 상태 대비)
             if (!myTeam) showSurvey();
 
             try {
+                // 2. Firebase 연결
                 const app = initializeApp(fbConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
 
+                // 3. 로그인 시도
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
@@ -416,12 +428,12 @@
                     subscribeToLeaderboard();
                 }
 
-                // Setup listeners
+                // 4. 클릭 이벤트 리스너 등록
                 setupHoldListeners();
 
             } catch (e) {
-                console.error("Firebase Init/Auth Error (Offline Mode):", e);
-                // Even if auth fails, we allow local play
+                console.error("Firebase Init Error:", e);
+                // 에러가 나도 게임은 가능하게 리스너 등록
                 setupHoldListeners();
             }
         }
@@ -435,25 +447,36 @@
                     const data = snap.data();
                     myTeam = data.team;
                     attempts = data.attempts !== undefined ? data.attempts : 3;
-                    updateUI(); // Close survey if user exists
+                    // 이미 팀이 있으면 UI 갱신 (모달 닫기)
+                    updateUI();
                 }
             } catch (e) {
                 console.error("Error loading user data:", e);
             }
         }
 
-        async function saveSession(score) {
+        // [핵심] 점수 업로드 로직 (누적 방식)
+        async function uploadScore(delta, isFinal = false) {
             if (!user) return;
+            if (delta === 0 && !isFinal) return; // 보낼 점수 없으면 스킵
+
             const userRef = doc(db, dbPath, user.uid);
+            const payload = {
+                uid: user.uid,
+                team: myTeam,
+                // increment(delta)를 사용하면 서버의 기존 점수에 delta만큼 더해짐
+                // 예: 기존 100 + 12(꾹누름) = 112. 클릭 수 손실 없음.
+                totalScore: increment(delta),
+                name: `Soldier-${user.uid.slice(0, 5)}`
+            };
+
+            if (isFinal) {
+                payload.lastSession = sessionScore;
+                payload.attempts = attempts;
+            }
+
             try {
-                await setDoc(userRef, {
-                    uid: user.uid,
-                    team: myTeam,
-                    totalScore: increment(score),
-                    lastSession: score,
-                    attempts: attempts,
-                    name: `Soldier-${user.uid.slice(0, 5)}`
-                }, { merge: true });
+                await setDoc(userRef, payload, { merge: true });
             } catch (e) {
                 console.error("Save error:", e);
             }
@@ -462,6 +485,8 @@
         function subscribeToLeaderboard() {
             if (!user) return;
             const colRef = collection(db, dbPath);
+
+            // 실시간 데이터 수신
             onSnapshot(colRef, (snapshot) => {
                 let allDocs = [];
                 let insideTotal = 0;
@@ -470,10 +495,12 @@
                 snapshot.forEach(doc => {
                     const d = doc.data();
                     allDocs.push(d);
+                    // 팀별 점수 합산
                     if (d.team === 'inside') insideTotal += (d.totalScore || 0);
                     if (d.team === 'outside') outsideTotal += (d.totalScore || 0);
                 });
 
+                // 세력전 바 업데이트
                 const totalWar = insideTotal + outsideTotal;
                 if (totalWar > 0) {
                     const inPct = (insideTotal / totalWar) * 100;
@@ -484,7 +511,10 @@
                     els.barOutside.innerText = `벽 밖 ${Math.round(outPct)}%`;
                 }
 
+                // 랭킹 정렬
                 allDocs.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+
+                // 상위 10명 표시
                 els.leaderboardList.innerHTML = '';
                 allDocs.slice(0, 10).forEach((p, index) => {
                     const isMe = p.uid === user.uid;
@@ -513,8 +543,11 @@
 
             sessionActive = true;
             sessionScore = 0;
+            uncommittedScore = 0;
             timeLeft = 30;
             attempts--;
+
+            // UI 즉시 반영
             updateUI();
 
             els.startBtn.disabled = true;
@@ -522,6 +555,15 @@
             els.clickBtn.disabled = false;
             els.clickBtn.innerHTML = "<span style='font-size:1rem'>구축하라!</span><br>HOLD / CLICK!";
 
+            // [중요] 1초마다 쌓인 점수(uncommittedScore)를 서버로 전송
+            syncInterval = setInterval(() => {
+                if (uncommittedScore > 0) {
+                    uploadScore(uncommittedScore, false);
+                    uncommittedScore = 0; // 보냈으니 초기화
+                }
+            }, 1000);
+
+            // 게임 타이머
             timerInterval = setInterval(() => {
                 timeLeft--;
                 updateUI();
@@ -533,13 +575,23 @@
 
         function endGame() {
             clearInterval(timerInterval);
+            clearInterval(syncInterval); // 동기화 중지
             endHold();
+
             sessionActive = false;
             els.clickBtn.disabled = true;
             els.clickBtn.innerText = "작전 종료";
             els.startBtn.disabled = false;
             els.startBtn.innerText = "다음 작전 개시 (30초)";
-            saveSession(sessionScore);
+
+            // 남은 자투리 점수 최종 전송
+            if (uncommittedScore > 0) {
+                uploadScore(uncommittedScore, true);
+                uncommittedScore = 0;
+            } else {
+                uploadScore(0, true); // 시도 횟수 차감만 저장
+            }
+
             alert(`작전 종료!\n이번 토벌 수: ${sessionScore}`);
             updateUI();
         }
@@ -547,21 +599,29 @@
         // --- Hold / Click Logic ---
         function setupHoldListeners() {
             const btn = els.clickBtn;
+
+            // 마우스
             btn.addEventListener('mousedown', startHold);
             document.addEventListener('mouseup', endHold);
             btn.addEventListener('mouseleave', endHold);
+
+            // 터치 (모바일)
             btn.addEventListener('touchstart', (e) => {
+                // 스크롤 방지
                 if (e.cancelable) e.preventDefault();
                 startHold(e);
             }, { passive: false });
+
             document.addEventListener('touchend', endHold);
             document.addEventListener('touchcancel', endHold);
         }
 
         function startHold(e) {
             if (!sessionActive) return;
-            registerClick(e);
+            registerClick(e); // 누르자마자 1회
+
             if (holdTimer === null) {
+                // 누르고 있으면 0.08초마다 계속 실행
                 holdTimer = setInterval(() => { registerClick(); }, HOLD_INTERVAL);
             }
         }
@@ -575,11 +635,15 @@
 
         function registerClick(e) {
             if (!sessionActive) return;
-            sessionScore++;
+
+            sessionScore++;      // 화면 표시용
+            uncommittedScore++;  // 서버 전송 대기용
             els.sessionScore.innerText = sessionScore;
 
+            // 이펙트 생성
             const btn = els.clickBtn;
             let x, y;
+
             if (e && (e.clientX || (e.touches && e.touches[0]))) {
                 const clientX = e.clientX || e.touches[0].clientX;
                 const clientY = e.clientY || e.touches[0].clientY;
@@ -587,6 +651,7 @@
                 x = clientX - rect.left;
                 y = clientY - rect.top;
             } else {
+                // 자동 클릭 시 랜덤 위치 타격
                 const rect = btn.getBoundingClientRect();
                 x = Math.random() * rect.width;
                 y = Math.random() * rect.height;
@@ -600,6 +665,8 @@
 
             btn.appendChild(slash);
             setTimeout(() => slash.remove(), 300);
+
+            // 모바일 진동
             if (navigator.vibrate) navigator.vibrate(5);
         }
 
@@ -609,6 +676,7 @@
             const refillBtnAction = document.getElementById('refillActionBtn');
             refillBtnAction.disabled = true;
             refillBtnAction.innerText = `보급품 도착까지 ${refillTime}초`;
+
             const intv = setInterval(() => {
                 refillTime--;
                 refillBtnAction.innerText = `보급품 도착까지 ${refillTime}초`;
@@ -622,7 +690,8 @@
 
         window.confirmRefill = () => {
             attempts = 3;
-            saveSession(0);
+            // 시도 횟수 리필 저장
+            uploadScore(0, true);
             els.refillModal.classList.add('hidden');
             updateUI();
         };
@@ -636,7 +705,8 @@
                 els.teamName.innerHTML = myTeam === 'inside'
                     ? "<span class='text-inside'>🛡️ 헌병단 (벽 안)</span>"
                     : "<span class='text-outside'>⚔️ 조사병단 (벽 밖)</span>";
-                els.surveyModal.classList.add('hidden'); // Close modal
+                // [수정됨] 팀이 있으면 모달을 확실히 닫음
+                els.surveyModal.classList.add('hidden');
 
                 if (myTeam === 'inside') {
                     els.clickBtn.style.borderColor = 'var(--inside-gold)';
@@ -681,19 +751,19 @@
             const curr = questions[qIndex];
             if (choice === 'A') scores[curr.aScore]++;
             else scores[curr.bScore]++;
+
             qIndex++;
             renderQuestion();
         };
 
         async function finishSurvey() {
-            // 1. Determine Team
+            // 1. 팀 결정
             myTeam = scores.inside > scores.outside ? 'inside' : 'outside';
 
-            // 2. UI Update Immediately (Optimistic)
-            // This ensures the screen transition happens even if DB fails
+            // 2. UI 즉시 갱신 (화면 전환)
             updateUI();
 
-            // 3. Try Saving to DB
+            // 3. 서버에 유저 정보 생성 (실패해도 로컬 진행)
             if (user) {
                 try {
                     await setDoc(doc(db, dbPath, user.uid), {
@@ -704,7 +774,7 @@
                         name: `Recruit-${user.uid.slice(0, 4)}`
                     });
                 } catch (e) {
-                    console.warn("Could not save initial user data (Offline or Permission Error). Game proceeds locally.");
+                    console.warn("Offline Mode: Proceeding without server sync");
                 }
             }
         }
@@ -747,6 +817,7 @@
         </div>
 
         <div class="action-area">
+            <!-- 버튼 클릭 이벤트는 JS에서 리스너로 등록됨 -->
             <button id="clickBtn" disabled>
                 작전 대기 중<br>
                 <small style="font-size:0.8rem; font-weight:normal">Waiting for orders...</small>
@@ -773,7 +844,9 @@
         <div class="modal-content">
             <h2 style="margin-top:0; color:#ddd;">병단 입단 심사</h2>
             <p style="color:#aaa; font-size:0.9rem;">당신의 성향에 따라 소속이 결정됩니다.</p>
+
             <h3 id="surveyQuestion" style="margin: 20px 0; min-height:50px;">질문 로딩중...</h3>
+
             <div id="optA" class="survey-option" onclick="answerSurvey('A')">A</div>
             <div id="optB" class="survey-option" onclick="answerSurvey('B')">B</div>
         </div>
