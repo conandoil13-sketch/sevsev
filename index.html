@@ -7,7 +7,7 @@
     <!-- 모바일 최적화: 확대 방지 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <!-- 구글 폰트 (고딕/명조 느낌의 폰트) -->
+    <!-- 구글 폰트 -->
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&family=Black+Ops+One&display=swap"
         rel="stylesheet">
 
@@ -26,12 +26,10 @@
 
         * {
             box-sizing: border-box;
-            /* 모바일 텍스트 선택 방지 */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
-            /* 더블 탭 확대 방지 */
             touch-action: manipulation;
         }
 
@@ -161,7 +159,6 @@
             position: relative;
         }
 
-        /* 메인 클릭 버튼 (거인 목덜미 베기 느낌) */
         #clickBtn {
             width: 100%;
             height: 140px;
@@ -191,7 +188,6 @@
             filter: grayscale(100%);
         }
 
-        /* 칼날 이펙트 (클릭 시) */
         .slash-effect {
             position: absolute;
             width: 100%;
@@ -282,7 +278,7 @@
             font-weight: bold;
         }
 
-        /* --- Modals (Survey & Ad) --- */
+        /* --- Modals --- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -336,7 +332,6 @@
             z-index: -1;
         }
 
-        /* --- Utility --- */
         .hidden {
             display: none !important;
         }
@@ -368,14 +363,14 @@
         let db, auth, user;
         let myTeam = null;
         let sessionActive = false;
-        let timeLeft = 30; // Changed to 30s
+        let timeLeft = 30;
         let sessionScore = 0;
         let attempts = 3;
         let timerInterval;
 
         // Hold click vars
         let holdTimer = null;
-        const HOLD_INTERVAL = 80; // ms between clicks
+        const HOLD_INTERVAL = 80;
 
         // --- Elements ---
         const els = {
@@ -400,16 +395,14 @@
         async function init() {
             const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
-            if (!fbConfig.apiKey) {
-                console.warn("Firebase config missing. Backend features will be simulated locally.");
-            }
+            // Initial setup assuming offline/loading
+            if (!myTeam) showSurvey();
 
             try {
                 const app = initializeApp(fbConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Auth Strategy: Prefer custom token, fallback to anonymous
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
@@ -419,37 +412,30 @@
                 user = auth.currentUser;
                 if (user) {
                     console.log("Logged in as:", user.uid);
-                    // Check if user has data
                     await loadUserData();
-                    // Listen to global leaderboard
                     subscribeToLeaderboard();
                 }
 
-                // Setup Hold Listeners
+                // Setup listeners
                 setupHoldListeners();
 
             } catch (e) {
-                console.error("Firebase Init Error:", e);
-                // Fallback for UI if offline
-                if (!myTeam) showSurvey();
+                console.error("Firebase Init/Auth Error (Offline Mode):", e);
+                // Even if auth fails, we allow local play
+                setupHoldListeners();
             }
         }
 
-        // --- Data Logic ---
         async function loadUserData() {
             if (!user) return;
             const userRef = doc(db, dbPath, user.uid);
             try {
                 const snap = await getDoc(userRef);
-
                 if (snap.exists()) {
                     const data = snap.data();
                     myTeam = data.team;
                     attempts = data.attempts !== undefined ? data.attempts : 3;
-                    updateUI();
-                } else {
-                    // New user, show survey
-                    showSurvey();
+                    updateUI(); // Close survey if user exists
                 }
             } catch (e) {
                 console.error("Error loading user data:", e);
@@ -459,7 +445,6 @@
         async function saveSession(score) {
             if (!user) return;
             const userRef = doc(db, dbPath, user.uid);
-
             try {
                 await setDoc(userRef, {
                     uid: user.uid,
@@ -477,7 +462,6 @@
         function subscribeToLeaderboard() {
             if (!user) return;
             const colRef = collection(db, dbPath);
-
             onSnapshot(colRef, (snapshot) => {
                 let allDocs = [];
                 let insideTotal = 0;
@@ -490,7 +474,6 @@
                     if (d.team === 'outside') outsideTotal += (d.totalScore || 0);
                 });
 
-                // Update War Bar
                 const totalWar = insideTotal + outsideTotal;
                 if (totalWar > 0) {
                     const inPct = (insideTotal / totalWar) * 100;
@@ -501,10 +484,7 @@
                     els.barOutside.innerText = `벽 밖 ${Math.round(outPct)}%`;
                 }
 
-                // Sort Leaderboard
                 allDocs.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
-
-                // Render Top 10
                 els.leaderboardList.innerHTML = '';
                 allDocs.slice(0, 10).forEach((p, index) => {
                     const isMe = p.uid === user.uid;
@@ -517,13 +497,9 @@
                 `;
                     els.leaderboardList.appendChild(row);
                 });
-
-                // Show UID
                 document.getElementById('uidDisplay').innerText = user.uid.slice(0, 8) + "...";
-
             }, (error) => {
                 console.error("Leaderboard subscription error:", error);
-                els.leaderboardList.innerHTML = '<div style="color:#aaa; text-align:center">통신 보안 문제로 랭킹을 불러올 수 없습니다.</div>';
             });
         }
 
@@ -537,10 +513,8 @@
 
             sessionActive = true;
             sessionScore = 0;
-            timeLeft = 30; // Reset to 30s
+            timeLeft = 30;
             attempts--;
-
-            // Optimistic update locally
             updateUI();
 
             els.startBtn.disabled = true;
@@ -548,7 +522,6 @@
             els.clickBtn.disabled = false;
             els.clickBtn.innerHTML = "<span style='font-size:1rem'>구축하라!</span><br>HOLD / CLICK!";
 
-            // Start Timer
             timerInterval = setInterval(() => {
                 timeLeft--;
                 updateUI();
@@ -560,14 +533,12 @@
 
         function endGame() {
             clearInterval(timerInterval);
-            endHold(); // Ensure holding stops
+            endHold();
             sessionActive = false;
             els.clickBtn.disabled = true;
             els.clickBtn.innerText = "작전 종료";
             els.startBtn.disabled = false;
             els.startBtn.innerText = "다음 작전 개시 (30초)";
-
-            // Send data
             saveSession(sessionScore);
             alert(`작전 종료!\n이번 토벌 수: ${sessionScore}`);
             updateUI();
@@ -576,34 +547,22 @@
         // --- Hold / Click Logic ---
         function setupHoldListeners() {
             const btn = els.clickBtn;
-
-            // Mouse Events
             btn.addEventListener('mousedown', startHold);
             document.addEventListener('mouseup', endHold);
             btn.addEventListener('mouseleave', endHold);
-
-            // Touch Events
             btn.addEventListener('touchstart', (e) => {
-                // Prevent default to avoid scrolling/zooming while tapping fast or holding
                 if (e.cancelable) e.preventDefault();
                 startHold(e);
             }, { passive: false });
-
             document.addEventListener('touchend', endHold);
             document.addEventListener('touchcancel', endHold);
         }
 
         function startHold(e) {
             if (!sessionActive) return;
-
-            // Register initial click immediately
             registerClick(e);
-
-            // Start interval
             if (holdTimer === null) {
-                holdTimer = setInterval(() => {
-                    registerClick(); // Auto click without event
-                }, HOLD_INTERVAL);
+                holdTimer = setInterval(() => { registerClick(); }, HOLD_INTERVAL);
             }
         }
 
@@ -614,27 +573,20 @@
             }
         }
 
-        // Unified click handler
         function registerClick(e) {
             if (!sessionActive) return;
-
-            // Add score
             sessionScore++;
             els.sessionScore.innerText = sessionScore;
 
-            // Visual Effect (Slash)
             const btn = els.clickBtn;
             let x, y;
-
             if (e && (e.clientX || (e.touches && e.touches[0]))) {
-                // Use Event Coordinates
                 const clientX = e.clientX || e.touches[0].clientX;
                 const clientY = e.clientY || e.touches[0].clientY;
                 const rect = btn.getBoundingClientRect();
                 x = clientX - rect.left;
                 y = clientY - rect.top;
             } else {
-                // Random Coordinates for Auto/Hold clicks
                 const rect = btn.getBoundingClientRect();
                 x = Math.random() * rect.width;
                 y = Math.random() * rect.height;
@@ -643,13 +595,11 @@
             const slash = document.createElement('div');
             slash.className = 'slash-effect';
             slash.style.top = `${y}px`;
-            slash.style.left = `${x - 100}px`; // Center ish
+            slash.style.left = `${x - 100}px`;
             slash.style.transform = `rotate(${Math.random() * 360}deg)`;
 
             btn.appendChild(slash);
             setTimeout(() => slash.remove(), 300);
-
-            // Vibrate on mobile
             if (navigator.vibrate) navigator.vibrate(5);
         }
 
@@ -659,7 +609,6 @@
             const refillBtnAction = document.getElementById('refillActionBtn');
             refillBtnAction.disabled = true;
             refillBtnAction.innerText = `보급품 도착까지 ${refillTime}초`;
-
             const intv = setInterval(() => {
                 refillTime--;
                 refillBtnAction.innerText = `보급품 도착까지 ${refillTime}초`;
@@ -673,7 +622,7 @@
 
         window.confirmRefill = () => {
             attempts = 3;
-            saveSession(0); // Just saves state
+            saveSession(0);
             els.refillModal.classList.add('hidden');
             updateUI();
         };
@@ -687,9 +636,8 @@
                 els.teamName.innerHTML = myTeam === 'inside'
                     ? "<span class='text-inside'>🛡️ 헌병단 (벽 안)</span>"
                     : "<span class='text-outside'>⚔️ 조사병단 (벽 밖)</span>";
-                els.surveyModal.classList.add('hidden');
+                els.surveyModal.classList.add('hidden'); // Close modal
 
-                // Apply theme borders
                 if (myTeam === 'inside') {
                     els.clickBtn.style.borderColor = 'var(--inside-gold)';
                 } else {
@@ -733,23 +681,32 @@
             const curr = questions[qIndex];
             if (choice === 'A') scores[curr.aScore]++;
             else scores[curr.bScore]++;
-
             qIndex++;
             renderQuestion();
         };
 
         async function finishSurvey() {
+            // 1. Determine Team
             myTeam = scores.inside > scores.outside ? 'inside' : 'outside';
-            if (!user) return;
-            // Save initial user doc
-            await setDoc(doc(db, dbPath, user.uid), {
-                uid: user.uid,
-                team: myTeam,
-                totalScore: 0,
-                attempts: 3,
-                name: `Recruit-${user.uid.slice(0, 4)}`
-            });
+
+            // 2. UI Update Immediately (Optimistic)
+            // This ensures the screen transition happens even if DB fails
             updateUI();
+
+            // 3. Try Saving to DB
+            if (user) {
+                try {
+                    await setDoc(doc(db, dbPath, user.uid), {
+                        uid: user.uid,
+                        team: myTeam,
+                        totalScore: 0,
+                        attempts: 3,
+                        name: `Recruit-${user.uid.slice(0, 4)}`
+                    });
+                } catch (e) {
+                    console.warn("Could not save initial user data (Offline or Permission Error). Game proceeds locally.");
+                }
+            }
         }
 
         // --- Init ---
@@ -765,7 +722,6 @@
             <div id="teamName" class="team-badge">소속 심사 중...</div>
         </header>
 
-        <!-- 세력전 게이지 -->
         <div style="font-size:0.8rem; margin-bottom:5px; color:#aaa; display:flex; justify-content:space-between;">
             <span>🛡️ WALL SINA</span>
             <span>WALL MARIA ⚔️</span>
@@ -775,7 +731,6 @@
             <div id="barOutside" class="bar-segment bar-outside" style="width: 50%">50%</div>
         </div>
 
-        <!-- 상태창 -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">남은 시간</div>
@@ -791,9 +746,7 @@
             </div>
         </div>
 
-        <!-- 메인 액션 -->
         <div class="action-area">
-            <!-- Removed inline event handlers to use JS listeners for Hold logic -->
             <button id="clickBtn" disabled>
                 작전 대기 중<br>
                 <small style="font-size:0.8rem; font-weight:normal">Waiting for orders...</small>
@@ -805,7 +758,6 @@
             </div>
         </div>
 
-        <!-- 리더보드 -->
         <div class="leaderboard">
             <h3>🏆 정예 병사 순위 (실시간)</h3>
             <div id="leaderboardList">
@@ -817,20 +769,16 @@
         </div>
     </main>
 
-    <!-- Survey Modal -->
     <div id="surveyModal" class="modal-overlay hidden">
         <div class="modal-content">
             <h2 style="margin-top:0; color:#ddd;">병단 입단 심사</h2>
             <p style="color:#aaa; font-size:0.9rem;">당신의 성향에 따라 소속이 결정됩니다.</p>
-
             <h3 id="surveyQuestion" style="margin: 20px 0; min-height:50px;">질문 로딩중...</h3>
-
             <div id="optA" class="survey-option" onclick="answerSurvey('A')">A</div>
             <div id="optB" class="survey-option" onclick="answerSurvey('B')">B</div>
         </div>
     </div>
 
-    <!-- Refill Modal (Ad Simulation) -->
     <div id="refillModal" class="modal-overlay hidden">
         <div class="modal-content">
             <h2 style="margin-top:0;">보급품 요청</h2>
