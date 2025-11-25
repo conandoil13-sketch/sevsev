@@ -2,95 +2,851 @@
 <html lang="ko">
 
 <head>
-    <meta charset="UTF-8" />
-    <title>Click Battle</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <title>Wall Battle: 진격의 클릭</title>
+    <!-- 모바일 최적화: 확대 방지 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- 구글 폰트 (고딕/명조 느낌의 폰트) -->
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&family=Black+Ops+One&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --wall-color: #3e3a36;
+            --steam-color: #e0e0e0;
+            --blood-color: #8a0c0c;
+            --outside-green: #2d5a27;
+            /* 조사병단 망토색 */
+            --inside-gold: #cfaa48;
+            /* 헌병단 문양색 */
+            --bg-dark: #0f0f12;
+            --text-light: #f0f0f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            /* 모바일 텍스트 선택 방지 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            /* 더블 탭 확대 방지 */
+            touch-action: manipulation;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Nanum Myeongjo', serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image:
+                linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+                url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0wIDQwaDQwVjBIMHY0MHptMjAgMjBoMjB2MjBIMjBWNjB6TTAgODBofjB2MjBIMFY4MHoiIGZpbGw9IiMzMzMiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9nPjwvc3ZnPg==');
+        }
+
+        main {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* --- Header --- */
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #555;
+            padding-bottom: 10px;
+        }
+
+        h1 {
+            font-family: 'Black Ops One', cursive;
+            font-size: 2.2rem;
+            margin: 0;
+            color: #fff;
+            text-shadow: 0 0 10px var(--blood-color);
+            letter-spacing: 2px;
+        }
+
+        .team-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* --- War Status Bar --- */
+        .war-status {
+            display: flex;
+            height: 24px;
+            width: 100%;
+            background: #222;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .bar-segment {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            white-space: nowrap;
+            transition: width 1s ease;
+        }
+
+        .bar-inside {
+            background: var(--inside-gold);
+            color: #000;
+        }
+
+        .bar-outside {
+            background: var(--outside-green);
+            color: #fff;
+        }
+
+        /* --- Stats Grid --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(40, 40, 45, 0.9);
+            border: 1px solid #444;
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            font-family: sans-serif;
+        }
+
+        .red-text {
+            color: #ff6b6b;
+        }
+
+        /* --- Action Area --- */
+        .action-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        /* 메인 클릭 버튼 (거인 목덜미 베기 느낌) */
+        #clickBtn {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(180deg, #2b2b2b, #1a1a1a);
+            border: 2px solid #666;
+            border-bottom: 6px solid #444;
+            color: #fff;
+            font-size: 1.5rem;
+            font-family: 'Nanum Myeongjo', serif;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.05s, border-bottom 0.05s;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #clickBtn:active:not(:disabled) {
+            transform: translateY(4px);
+            border-bottom: 2px solid #444;
+        }
+
+        #clickBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        /* 칼날 이펙트 (클릭 시) */
+        .slash-effect {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #fff;
+            box-shadow: 0 0 10px #fff, 0 0 20px cyan;
+            transform: rotate(-45deg);
+            pointer-events: none;
+            animation: slashAnim 0.3s forwards;
+            top: 50%;
+            left: 0;
+        }
+
+        @keyframes slashAnim {
+            0% {
+                opacity: 1;
+                transform: scaleX(0) rotate(-45deg);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scaleX(1.2) rotate(-45deg);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scaleX(1.2) rotate(-45deg);
+            }
+        }
+
+        .btn-group {
+            display: flex;
+            width: 100%;
+            gap: 10px;
+        }
+
+        .sub-btn {
+            flex: 1;
+            padding: 12px;
+            background: #333;
+            border: 1px solid #555;
+            color: #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        #startBtn {
+            background: #1e3a5f;
+            border-color: #3b5c85;
+            color: white;
+        }
+
+        #refillBtn {
+            background: #5a2e2e;
+            border-color: #853b3b;
+            color: white;
+        }
+
+        /* --- Leaderboard --- */
+        .leaderboard {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .leaderboard h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            padding: 4px 0;
+            border-bottom: 1px dotted #333;
+        }
+
+        .rank-item.my-rank {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* --- Modals (Survey & Ad) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border: 2px solid #555;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .survey-option {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            text-align: left;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .survey-option:hover {
+            background: #3a3a3a;
+            border-color: #777;
+        }
+
+        .steam-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(circle, transparent 0%, var(--bg-dark) 90%);
+            z-index: -1;
+        }
+
+        /* --- Utility --- */
+        .hidden {
+            display: none !important;
+        }
+
+        .text-inside {
+            color: var(--inside-gold);
+        }
+
+        .text-outside {
+            color: #5cb85c;
+        }
+    </style>
 </head>
 
 <body>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDocs, onSnapshot, updateDoc, increment, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Configuration ---
+        const firebaseConfig = JSON.parse(new URLSearchParams(window.location.search).get('firebase_config') || '{}') || {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
+        const dbPath = `artifacts/${appId}/public/data/titans_click_battle`;
+
+        // --- State ---
+        let db, auth, user;
+        let myTeam = null;
+        let sessionActive = false;
+        let timeLeft = 30; // Changed to 30s
+        let sessionScore = 0;
+        let attempts = 3;
+        let timerInterval;
+
+        // Hold click vars
+        let holdTimer = null;
+        const HOLD_INTERVAL = 80; // ms between clicks
+
+        // --- Elements ---
+        const els = {
+            clickBtn: document.getElementById('clickBtn'),
+            startBtn: document.getElementById('startBtn'),
+            refillBtn: document.getElementById('refillBtn'),
+            timeLeft: document.getElementById('timeLeft'),
+            sessionScore: document.getElementById('sessionScore'),
+            attempts: document.getElementById('attempts'),
+            teamName: document.getElementById('teamName'),
+            surveyModal: document.getElementById('surveyModal'),
+            refillModal: document.getElementById('refillModal'),
+            surveyQ: document.getElementById('surveyQuestion'),
+            optA: document.getElementById('optA'),
+            optB: document.getElementById('optB'),
+            leaderboardList: document.getElementById('leaderboardList'),
+            barInside: document.getElementById('barInside'),
+            barOutside: document.getElementById('barOutside')
+        };
+
+        // --- Initialization ---
+        async function init() {
+            const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+            if (!fbConfig.apiKey) {
+                console.warn("Firebase config missing. Backend features will be simulated locally.");
+            }
+
+            try {
+                const app = initializeApp(fbConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Auth Strategy: Prefer custom token, fallback to anonymous
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                user = auth.currentUser;
+                if (user) {
+                    console.log("Logged in as:", user.uid);
+                    // Check if user has data
+                    await loadUserData();
+                    // Listen to global leaderboard
+                    subscribeToLeaderboard();
+                }
+
+                // Setup Hold Listeners
+                setupHoldListeners();
+
+            } catch (e) {
+                console.error("Firebase Init Error:", e);
+                // Fallback for UI if offline
+                if (!myTeam) showSurvey();
+            }
+        }
+
+        // --- Data Logic ---
+        async function loadUserData() {
+            if (!user) return;
+            const userRef = doc(db, dbPath, user.uid);
+            try {
+                const snap = await getDoc(userRef);
+
+                if (snap.exists()) {
+                    const data = snap.data();
+                    myTeam = data.team;
+                    attempts = data.attempts !== undefined ? data.attempts : 3;
+                    updateUI();
+                } else {
+                    // New user, show survey
+                    showSurvey();
+                }
+            } catch (e) {
+                console.error("Error loading user data:", e);
+            }
+        }
+
+        async function saveSession(score) {
+            if (!user) return;
+            const userRef = doc(db, dbPath, user.uid);
+
+            try {
+                await setDoc(userRef, {
+                    uid: user.uid,
+                    team: myTeam,
+                    totalScore: increment(score),
+                    lastSession: score,
+                    attempts: attempts,
+                    name: `Soldier-${user.uid.slice(0, 5)}`
+                }, { merge: true });
+            } catch (e) {
+                console.error("Save error:", e);
+            }
+        }
+
+        function subscribeToLeaderboard() {
+            if (!user) return;
+            const colRef = collection(db, dbPath);
+
+            onSnapshot(colRef, (snapshot) => {
+                let allDocs = [];
+                let insideTotal = 0;
+                let outsideTotal = 0;
+
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    allDocs.push(d);
+                    if (d.team === 'inside') insideTotal += (d.totalScore || 0);
+                    if (d.team === 'outside') outsideTotal += (d.totalScore || 0);
+                });
+
+                // Update War Bar
+                const totalWar = insideTotal + outsideTotal;
+                if (totalWar > 0) {
+                    const inPct = (insideTotal / totalWar) * 100;
+                    const outPct = (outsideTotal / totalWar) * 100;
+                    els.barInside.style.width = `${inPct}%`;
+                    els.barOutside.style.width = `${outPct}%`;
+                    els.barInside.innerText = `벽 안 ${Math.round(inPct)}%`;
+                    els.barOutside.innerText = `벽 밖 ${Math.round(outPct)}%`;
+                }
+
+                // Sort Leaderboard
+                allDocs.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+
+                // Render Top 10
+                els.leaderboardList.innerHTML = '';
+                allDocs.slice(0, 10).forEach((p, index) => {
+                    const isMe = p.uid === user.uid;
+                    const teamIcon = p.team === 'inside' ? '🛡️' : '⚔️';
+                    const row = document.createElement('div');
+                    row.className = `rank-item ${isMe ? 'my-rank' : ''}`;
+                    row.innerHTML = `
+                    <span>#${index + 1} ${teamIcon} ${p.name || 'Soldier'}</span>
+                    <span>${p.totalScore || 0}</span>
+                `;
+                    els.leaderboardList.appendChild(row);
+                });
+
+                // Show UID
+                document.getElementById('uidDisplay').innerText = user.uid.slice(0, 8) + "...";
+
+            }, (error) => {
+                console.error("Leaderboard subscription error:", error);
+                els.leaderboardList.innerHTML = '<div style="color:#aaa; text-align:center">통신 보안 문제로 랭킹을 불러올 수 없습니다.</div>';
+            });
+        }
+
+        // --- Game Logic ---
+        window.startGame = () => {
+            if (attempts <= 0) {
+                openRefillModal();
+                return;
+            }
+            if (sessionActive) return;
+
+            sessionActive = true;
+            sessionScore = 0;
+            timeLeft = 30; // Reset to 30s
+            attempts--;
+
+            // Optimistic update locally
+            updateUI();
+
+            els.startBtn.disabled = true;
+            els.startBtn.innerText = "전투 중...";
+            els.clickBtn.disabled = false;
+            els.clickBtn.innerHTML = "<span style='font-size:1rem'>구축하라!</span><br>HOLD / CLICK!";
+
+            // Start Timer
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateUI();
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        };
+
+        function endGame() {
+            clearInterval(timerInterval);
+            endHold(); // Ensure holding stops
+            sessionActive = false;
+            els.clickBtn.disabled = true;
+            els.clickBtn.innerText = "작전 종료";
+            els.startBtn.disabled = false;
+            els.startBtn.innerText = "다음 작전 개시 (30초)";
+
+            // Send data
+            saveSession(sessionScore);
+            alert(`작전 종료!\n이번 토벌 수: ${sessionScore}`);
+            updateUI();
+        }
+
+        // --- Hold / Click Logic ---
+        function setupHoldListeners() {
+            const btn = els.clickBtn;
+
+            // Mouse Events
+            btn.addEventListener('mousedown', startHold);
+            document.addEventListener('mouseup', endHold);
+            btn.addEventListener('mouseleave', endHold);
+
+            // Touch Events
+            btn.addEventListener('touchstart', (e) => {
+                // Prevent default to avoid scrolling/zooming while tapping fast or holding
+                if (e.cancelable) e.preventDefault();
+                startHold(e);
+            }, { passive: false });
+
+            document.addEventListener('touchend', endHold);
+            document.addEventListener('touchcancel', endHold);
+        }
+
+        function startHold(e) {
+            if (!sessionActive) return;
+
+            // Register initial click immediately
+            registerClick(e);
+
+            // Start interval
+            if (holdTimer === null) {
+                holdTimer = setInterval(() => {
+                    registerClick(); // Auto click without event
+                }, HOLD_INTERVAL);
+            }
+        }
+
+        function endHold() {
+            if (holdTimer !== null) {
+                clearInterval(holdTimer);
+                holdTimer = null;
+            }
+        }
+
+        // Unified click handler
+        function registerClick(e) {
+            if (!sessionActive) return;
+
+            // Add score
+            sessionScore++;
+            els.sessionScore.innerText = sessionScore;
+
+            // Visual Effect (Slash)
+            const btn = els.clickBtn;
+            let x, y;
+
+            if (e && (e.clientX || (e.touches && e.touches[0]))) {
+                // Use Event Coordinates
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                const rect = btn.getBoundingClientRect();
+                x = clientX - rect.left;
+                y = clientY - rect.top;
+            } else {
+                // Random Coordinates for Auto/Hold clicks
+                const rect = btn.getBoundingClientRect();
+                x = Math.random() * rect.width;
+                y = Math.random() * rect.height;
+            }
+
+            const slash = document.createElement('div');
+            slash.className = 'slash-effect';
+            slash.style.top = `${y}px`;
+            slash.style.left = `${x - 100}px`; // Center ish
+            slash.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+            btn.appendChild(slash);
+            setTimeout(() => slash.remove(), 300);
+
+            // Vibrate on mobile
+            if (navigator.vibrate) navigator.vibrate(5);
+        }
+
+        window.openRefillModal = () => {
+            els.refillModal.classList.remove('hidden');
+            let refillTime = 5;
+            const refillBtnAction = document.getElementById('refillActionBtn');
+            refillBtnAction.disabled = true;
+            refillBtnAction.innerText = `보급품 도착까지 ${refillTime}초`;
+
+            const intv = setInterval(() => {
+                refillTime--;
+                refillBtnAction.innerText = `보급품 도착까지 ${refillTime}초`;
+                if (refillTime <= 0) {
+                    clearInterval(intv);
+                    refillBtnAction.disabled = false;
+                    refillBtnAction.innerText = "가스/칼날 보급 받기 (완료)";
+                }
+            }, 1000);
+        };
+
+        window.confirmRefill = () => {
+            attempts = 3;
+            saveSession(0); // Just saves state
+            els.refillModal.classList.add('hidden');
+            updateUI();
+        };
+
+        function updateUI() {
+            els.timeLeft.innerText = timeLeft;
+            els.sessionScore.innerText = sessionScore;
+            els.attempts.innerText = attempts;
+
+            if (myTeam) {
+                els.teamName.innerHTML = myTeam === 'inside'
+                    ? "<span class='text-inside'>🛡️ 헌병단 (벽 안)</span>"
+                    : "<span class='text-outside'>⚔️ 조사병단 (벽 밖)</span>";
+                els.surveyModal.classList.add('hidden');
+
+                // Apply theme borders
+                if (myTeam === 'inside') {
+                    els.clickBtn.style.borderColor = 'var(--inside-gold)';
+                } else {
+                    els.clickBtn.style.borderColor = 'var(--outside-green)';
+                }
+            }
+
+            if (attempts <= 0) {
+                els.refillBtn.classList.remove('hidden');
+            } else {
+                els.refillBtn.classList.add('hidden');
+            }
+        }
+
+        // --- Survey Logic ---
+        let qIndex = 0;
+        let scores = { inside: 0, outside: 0 };
+        const questions = [
+            { q: "거인이 벽을 부수고 들어왔다. 당신의 행동은?", a: "가족과 함께 가장 안전한 내지로 피한다.", b: "무기를 들고 거인에게 맞서 싸운다.", aScore: 'inside', bScore: 'outside' },
+            { q: "당신이 생각하는 '평화'란?", a: "견고한 벽 안에서 질서가 유지되는 것.", b: "위험하더라도 벽 밖의 진실을 아는 것.", aScore: 'inside', bScore: 'outside' },
+            { q: "지급받고 싶은 장비는?", a: "헌병단의 소총 (치안 유지)", b: "입체기동장치와 칼날 (거인 토벌)", aScore: 'inside', bScore: 'outside' }
+        ];
+
+        function showSurvey() {
+            els.surveyModal.classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            if (qIndex >= questions.length) {
+                finishSurvey();
+                return;
+            }
+            const curr = questions[qIndex];
+            els.surveyQ.innerText = curr.q;
+            els.optA.innerText = curr.a;
+            els.optB.innerText = curr.b;
+        }
+
+        window.answerSurvey = (choice) => {
+            const curr = questions[qIndex];
+            if (choice === 'A') scores[curr.aScore]++;
+            else scores[curr.bScore]++;
+
+            qIndex++;
+            renderQuestion();
+        };
+
+        async function finishSurvey() {
+            myTeam = scores.inside > scores.outside ? 'inside' : 'outside';
+            if (!user) return;
+            // Save initial user doc
+            await setDoc(doc(db, dbPath, user.uid), {
+                uid: user.uid,
+                team: myTeam,
+                totalScore: 0,
+                attempts: 3,
+                name: `Recruit-${user.uid.slice(0, 4)}`
+            });
+            updateUI();
+        }
+
+        // --- Init ---
+        init();
+
+    </script>
+
     <main>
-        <section class="header">
-            <h1>CLICK BATTLE</h1>
-            <p id="teamLabel">당신의 팀: (결정 중)</p>
-        </section>
+        <div class="steam-bg"></div>
 
-        <div class="layout">
-            <div>
-                <section class="stats">
-                    <div class="stat-box">
-                        <div class="stat-label">총 클릭 수 (이 브라우저)</div>
-                        <div class="stat-value" id="clickCount">0</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">이번 세션 클릭 수</div>
-                        <div class="stat-value" id="sessionClickCount">0</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">남은 도전 횟수</div>
-                        <div class="stat-value"><span id="attemptsLeft">3</span>회</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">남은 시간</div>
-                        <div class="stat-value"><span id="timeLeft">60</span>초</div>
-                    </div>
-                </section>
+        <header>
+            <h1>CLICK ON TITAN</h1>
+            <div id="teamName" class="team-badge">소속 심사 중...</div>
+        </header>
 
-                <div id="sessionResult"></div>
+        <!-- 세력전 게이지 -->
+        <div style="font-size:0.8rem; margin-bottom:5px; color:#aaa; display:flex; justify-content:space-between;">
+            <span>🛡️ WALL SINA</span>
+            <span>WALL MARIA ⚔️</span>
+        </div>
+        <div class="war-status">
+            <div id="barInside" class="bar-segment bar-inside" style="width: 50%">50%</div>
+            <div id="barOutside" class="bar-segment bar-outside" style="width: 50%">50%</div>
+        </div>
 
-                <section class="action">
-                    <button id="startSessionBtn">1분 도전 시작</button>
-                    <button id="clickBtn" disabled>CLICK</button>
-                </section>
-
-                <section class="refill">
-                    <button id="showAdBtn" class="hidden">광고 보고 도전 횟수 리필</button>
-                </section>
-
-                <section class="footer">
-                    <small>UID: <span id="uidLabel"></span></small><br />
-                    <small>이 사이트는 클릭 수 실험용 과제입니다.</small>
-                </section>
+        <!-- 상태창 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">남은 시간</div>
+                <div class="stat-value"><span id="timeLeft" class="red-text">30</span>s</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-label">현재 토벌 수</div>
+                <div class="stat-value" id="sessionScore">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">남은 작전 횟수</div>
+                <div class="stat-value"><span id="attempts">3</span>회</div>
+            </div>
+        </div>
 
-            <aside class="leaderboard">
-                <h2>GLOBAL RANKING</h2>
-                <ol id="leaderboardList"></ol>
-                <div id="myRankLine">랭킹 정보를 불러오는 중...</div>
-            </aside>
+        <!-- 메인 액션 -->
+        <div class="action-area">
+            <!-- Removed inline event handlers to use JS listeners for Hold logic -->
+            <button id="clickBtn" disabled>
+                작전 대기 중<br>
+                <small style="font-size:0.8rem; font-weight:normal">Waiting for orders...</small>
+            </button>
+
+            <div class="btn-group">
+                <button id="startBtn" class="sub-btn" onclick="startGame()">작전 개시 (30초)</button>
+                <button id="refillBtn" class="sub-btn hidden" onclick="openRefillModal()">가스/칼날 보급</button>
+            </div>
+        </div>
+
+        <!-- 리더보드 -->
+        <div class="leaderboard">
+            <h3>🏆 정예 병사 순위 (실시간)</h3>
+            <div id="leaderboardList">
+                <div style="text-align:center; color:#777; padding:10px;">통신 연결 중...</div>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:10px; font-size:0.7rem; color:#555;">
+            UID: <span id="uidDisplay">Anonymous</span> | Attack on Titan Fan Game
         </div>
     </main>
 
-    <!-- 광고 오버레이 -->
-    <div id="adOverlay" class="ad-overlay hidden">
-        <div class="ad-modal">
-            <p class="ad-label">스폰서 광고 (사실은 아닙니다~)</p>
-            <p class="ad-timer">광고 종료까지 <span id="adSeconds">10</span>초</p>
-            <div class="ad-image-placeholder">
-                <span><strong>손가락 보호 크림</strong> 출시!</span>
-                <span>“1분 광클 후, 당신의 관절을 지켜드립니다.”</span>
-                <span>※ 실제 제품이 아니며 클릭 실험용 가짜 광고입니다.</span>
-            </div>
-            <button id="adCloseBtn" disabled>닫기 (10초 후 활성화)</button>
+    <!-- Survey Modal -->
+    <div id="surveyModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 style="margin-top:0; color:#ddd;">병단 입단 심사</h2>
+            <p style="color:#aaa; font-size:0.9rem;">당신의 성향에 따라 소속이 결정됩니다.</p>
+
+            <h3 id="surveyQuestion" style="margin: 20px 0; min-height:50px;">질문 로딩중...</h3>
+
+            <div id="optA" class="survey-option" onclick="answerSurvey('A')">A</div>
+            <div id="optB" class="survey-option" onclick="answerSurvey('B')">B</div>
         </div>
     </div>
 
-    <!-- 팀 선택 오버레이 -->
-    <div id="teamOverlay" class="team-overlay hidden">
-        <div class="team-modal">
-            <h2 class="team-modal-title">벽 안 / 벽 밖 테스트</h2>
-            <p class="team-modal-desc">
-                몇 가지 간단한 질문에 답하면 이번 실험에서 속할 팀이 정해집니다.
+    <!-- Refill Modal (Ad Simulation) -->
+    <div id="refillModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 style="margin-top:0;">보급품 요청</h2>
+            <p style="color:#aaa; font-size:0.9rem;">
+                가스와 칼날이 모두 소진되었습니다.<br>
+                본부에서 보급품이 올 때까지 대기하십시오.
             </p>
-            <div id="teamQuestionText"></div>
-            <div class="team-options">
-                <button id="teamOptionA" class="team-option-btn"></button>
-                <button id="teamOptionB" class="team-option-btn"></button>
+            <div style="background:#222; padding:20px; margin:15px 0; border-radius:4px;">
+                ⏳ 보급 마차 이동 중...
             </div>
+            <button id="refillActionBtn" class="sub-btn" style="width:100%" disabled>대기 중...</button>
+            <button class="sub-btn" style="width:100%; margin-top:10px; background:transparent; border:none;"
+                onclick="confirmRefill()">완료</button>
         </div>
     </div>
 
-    <!-- Vite 엔트리 -->
-    <script type="module" src="/src/main.js"></script>
 </body>
 
 </html>
