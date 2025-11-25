@@ -16,7 +16,6 @@
     <script src="https://clickbattle2025.web.app/click-battle.js"></script>
 
     <style>
-        /* 커스텀 애니메이션 & 유틸리티 */
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -54,7 +53,6 @@
             -webkit-user-select: none;
         }
 
-        /* 스크롤바 숨김 (깔끔한 UI) */
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -69,10 +67,9 @@
 <body
     class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col items-center justify-center overflow-hidden">
 
-    <!-- 앱 컨테이너 -->
     <div id="app"
         class="w-full max-w-md h-screen max-h-screen relative flex flex-col bg-white sm:rounded-3xl sm:h-[90vh] sm:shadow-2xl sm:border border-slate-100 overflow-hidden">
-        <!-- 동적 콘텐츠가 이곳에 렌더링됩니다 -->
+        <!-- 콘텐츠 영역 -->
     </div>
 
     <script>
@@ -80,24 +77,20 @@
         // 1. 전역 상태 및 유틸리티
         // ==========================================
         const state = {
-            view: 'intro', // intro, playing, voting, result
+            view: 'intro',
             levels: [],
             currentLevelIndex: 0,
             selectedVote: null,
             skipClickCount: 0,
-            skipVisible: false,
-            timers: [] // cleanup용
+            timers: []
         };
 
-        // 클릭 배틀 트래킹 함수
         function trackClick() {
             if (window.ClickBattle && typeof window.ClickBattle.recordClick === 'function') {
                 window.ClickBattle.recordClick();
-                // console.log("Click Recorded!"); 
             }
         }
 
-        // 배열 섞기
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -106,34 +99,29 @@
             return array;
         }
 
-        // 타이머 정리 (메모리 누수 방지)
         function clearAllTimers() {
             state.timers.forEach(t => clearInterval(t));
             state.timers.forEach(t => clearTimeout(t));
             state.timers = [];
         }
 
-        // 화면 렌더링 헬퍼
         function render(htmlString) {
             const app = document.getElementById('app');
             app.innerHTML = htmlString;
-            lucide.createIcons(); // 아이콘 렌더링
+            lucide.createIcons();
         }
 
-        // 초기화
         window.onload = function () {
             if (window.ClickBattle) {
                 window.ClickBattle.init("1004");
-                console.log("ClickBattle initialized: 1004");
             }
             showIntro();
         };
 
         // ==========================================
-        // 2. 화면별 렌더링 함수
+        // 2. 메인 로직
         // ==========================================
 
-        // --- 인트로 화면 ---
         function showIntro() {
             clearAllTimers();
             render(`
@@ -162,18 +150,17 @@
 
         function startGame() {
             trackClick();
-            // 레벨 정의
             const rawLevels = [
                 { id: 1, title: '생년월일 노가다', render: renderLevel1 },
                 { id: 2, title: '랜덤 감도 볼륨', render: renderLevel2 },
-                { id: 3, title: '밑 빠진 독(펌프)', render: renderLevel3 },
-                { id: 4, title: '마음의 눈(3초)', render: renderLevel4 },
+                { id: 3, title: '티켓팅 전쟁', render: renderLevel3 },
+                { id: 4, title: '수동 광고 스킵', render: renderLevel4 },
                 { id: 5, title: '보안 키패드', render: renderLevel5 },
-                { id: 6, title: '접촉 불량 버튼', render: renderLevel6 },
+                { id: 6, title: '무한 송금 오류', render: renderLevel6 },
                 { id: 7, title: '색깔 반사 신경', render: renderLevel7 },
                 { id: 8, title: '광고의 늪', render: renderLevel8 },
-                { id: 9, title: '지뢰 찾기', render: renderLevel9 },
-                { id: 10, title: '지문 인식', render: renderLevel10 },
+                { id: 9, title: '진짜 다운로드 찾기', render: renderLevel9 }, // Modified Name
+                { id: 10, title: '불편한 쇼핑몰', render: renderLevel10 },
             ];
             state.levels = shuffleArray(rawLevels);
             state.currentLevelIndex = 0;
@@ -181,16 +168,13 @@
             loadLevel();
         }
 
-        // --- 게임 플레이 화면 (공통 프레임) ---
         function loadLevel() {
             clearAllTimers();
             const level = state.levels[state.currentLevelIndex];
             const progress = ((state.currentLevelIndex) / state.levels.length) * 100;
 
-            // 기본 프레임 렌더링
             render(`
                 <div class="flex-1 flex flex-col bg-slate-100 p-4 pt-8 font-sans h-full relative">
-                    <!-- 상단 진행바 -->
                     <div class="bg-white px-6 py-4 rounded-2xl shadow-sm flex items-center justify-between mb-4 z-10">
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Progress</span>
                         <div class="flex items-center gap-3 flex-1 ml-4">
@@ -200,32 +184,20 @@
                             <span class="text-sm font-bold text-blue-600 w-10 text-right">${state.currentLevelIndex + 1}/${state.levels.length}</span>
                         </div>
                     </div>
-
-                    <!-- 게임 영역 -->
                     <div class="bg-white rounded-3xl shadow-xl overflow-hidden flex-1 flex flex-col relative border border-slate-100 z-0">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
                         <div class="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
                             <h2 class="font-bold text-slate-700">Entry No. ${level.id}</h2>
                             <span class="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-md font-bold">${level.title}</span>
                         </div>
-                        <div id="game-content" class="flex-grow relative overflow-hidden">
-                            <!-- 개별 게임 컨텐츠 주입 -->
-                        </div>
+                        <div id="game-content" class="flex-grow relative overflow-hidden"></div>
                     </div>
-
-                    <!-- 스킵 버튼 영역 -->
                     <div id="skip-container" class="mt-4 w-full h-12"></div>
-
-                    <p class="text-center text-xs text-slate-400 pb-2 mt-2">
-                        * 팁: 진정하시고 손가락 끝에 집중하세요.
-                    </p>
+                    <p class="text-center text-xs text-slate-400 pb-2 mt-2">* 팁: 진정하시고 손가락 끝에 집중하세요.</p>
                 </div>
             `);
 
-            // 개별 게임 로직 실행
             level.render(document.getElementById('game-content'));
-
-            // 스킵 버튼 로직 초기화
             initSkipButton();
         }
 
@@ -238,22 +210,16 @@
             }
         }
 
-        // --- 스킵 버튼 로직 ---
         function initSkipButton() {
             state.skipClickCount = 0;
             const container = document.getElementById('skip-container');
-
-            // 7초 후 등장
-            const timer = setTimeout(() => {
-                renderSkipButton(container);
-            }, 7000);
+            const timer = setTimeout(() => renderSkipButton(container), 7000);
             state.timers.push(timer);
         }
 
         function renderSkipButton(container) {
             const count = state.skipClickCount;
             const required = 20;
-
             let btnClass = count > 0
                 ? 'border-red-200 bg-red-50 text-red-500 active:scale-95'
                 : 'border-slate-200 bg-white text-slate-400 hover:bg-slate-50';
@@ -266,94 +232,62 @@
                 }
                 </button>
             `;
-
-            if (count > 0 && count < required) {
-                html += `<p class="text-[10px] text-center text-red-300 mt-1 animate-pulse-red">* 시스템 부하로 인해 여러 번 클릭해야 합니다.</p>`;
-            }
+            if (count > 0 && count < required) html += `<p class="text-[10px] text-center text-red-300 mt-1 animate-pulse-red">* 시스템 부하로 인해 여러 번 클릭해야 합니다.</p>`;
 
             container.innerHTML = html;
             lucide.createIcons();
-
             document.getElementById('btn-skip').onclick = () => {
                 trackClick();
                 state.skipClickCount++;
-                if (state.skipClickCount >= required) {
-                    nextLevel();
-                } else {
-                    renderSkipButton(container); // 리렌더링
-                }
+                if (state.skipClickCount >= required) nextLevel();
+                else renderSkipButton(container);
             };
         }
 
-
         // ==========================================
-        // 3. 개별 미니게임 로직
+        // 3. 미니게임 로직
         // ==========================================
 
-        // Level 1: 생년월일 노가다
         function renderLevel1(el) {
             let y = 1990, m = 1, d = 1;
             const target = { y: 1999, m: 12, d: 31 };
-
-            function updateDisplay() {
+            function update() {
                 document.getElementById('date-y').innerText = y;
                 document.getElementById('date-m').innerText = m;
                 document.getElementById('date-d').innerText = d;
             }
-
             el.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full p-4">
                     <h3 class="font-bold text-lg mb-2">생년월일 입력</h3>
                     <p class="text-sm text-gray-500 mb-6">목표: <span class="text-blue-600 font-bold">1999년 12월 31일</span></p>
                     <div class="flex gap-2 mb-8">
-                        <div class="flex flex-col items-center">
-                            <div id="date-y" class="w-20 h-12 flex items-center justify-center bg-gray-100 rounded border mb-2 font-mono text-lg font-bold">1990</div>
-                            <button id="btn-y" class="w-20 h-12 bg-white border-2 border-blue-200 rounded-lg active:bg-blue-100 active:scale-95 text-blue-600 font-bold">+1</button>
-                            <span class="text-xs text-gray-400 mt-1">년</span>
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <div id="date-m" class="w-20 h-12 flex items-center justify-center bg-gray-100 rounded border mb-2 font-mono text-lg font-bold">1</div>
-                            <button id="btn-m" class="w-20 h-12 bg-white border-2 border-blue-200 rounded-lg active:bg-blue-100 active:scale-95 text-blue-600 font-bold">+1</button>
-                            <span class="text-xs text-gray-400 mt-1">월</span>
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <div id="date-d" class="w-20 h-12 flex items-center justify-center bg-gray-100 rounded border mb-2 font-mono text-lg font-bold">1</div>
-                            <button id="btn-d" class="w-20 h-12 bg-white border-2 border-blue-200 rounded-lg active:bg-blue-100 active:scale-95 text-blue-600 font-bold">+1</button>
-                            <span class="text-xs text-gray-400 mt-1">일</span>
-                        </div>
+                        ${['y', 'm', 'd'].map(type => `
+                            <div class="flex flex-col items-center">
+                                <div id="date-${type}" class="w-20 h-12 flex items-center justify-center bg-gray-100 rounded border mb-2 font-mono text-lg font-bold">${type === 'y' ? 1990 : 1}</div>
+                                <button onclick="window.lv1_inc('${type}')" class="w-20 h-12 bg-white border-2 border-blue-200 rounded-lg active:bg-blue-100 active:scale-95 text-blue-600 font-bold">+1</button>
+                            </div>
+                        `).join('')}
                     </div>
-                    <p class="text-xs text-red-400 mb-4">* 주의: 범위를 넘어가면 초기화됩니다.</p>
-                    <button id="btn-check" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">확인</button>
+                    <button onclick="window.lv1_check()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">확인</button>
                 </div>
             `;
-
-            document.getElementById('btn-y').onclick = () => { trackClick(); y++; if (y > 2000) y = 1990; updateDisplay(); };
-            document.getElementById('btn-m').onclick = () => { trackClick(); m++; if (m > 12) m = 1; updateDisplay(); };
-            document.getElementById('btn-d').onclick = () => { trackClick(); d++; if (d > 31) d = 1; updateDisplay(); };
-            document.getElementById('btn-check').onclick = () => {
+            window.lv1_inc = (t) => {
+                trackClick();
+                if (t === 'y') { y++; if (y > 2000) y = 1990; }
+                if (t === 'm') { m++; if (m > 12) m = 1; }
+                if (t === 'd') { d++; if (d > 31) d = 1; }
+                update();
+            };
+            window.lv1_check = () => {
                 trackClick();
                 if (y === target.y && m === target.m && d === target.d) nextLevel();
                 else alert("목표 날짜와 일치하지 않습니다.");
             };
         }
 
-        // Level 2: 랜덤 볼륨
         function renderLevel2(el) {
             let vol = 50;
             const target = 75;
-
-            function updateDisplay() {
-                document.getElementById('vol-display').innerText = vol;
-            }
-
-            function changeVol(dir) {
-                trackClick();
-                const jump = Math.floor(Math.random() * 15) + 1;
-                vol = (dir === 'up') ? vol + jump : vol - jump;
-                if (vol < 0) vol = 0; if (vol > 100) vol = 100;
-                updateDisplay();
-            }
-
             el.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full px-6">
                     <i data-lucide="volume-2" class="w-10 h-10 text-gray-400 mb-4"></i>
@@ -361,159 +295,243 @@
                     <p class="mb-8">정확히 <span class="text-red-500 font-black text-xl">${target}</span>에 맞추세요.</p>
                     <div id="vol-display" class="text-5xl font-mono font-bold text-indigo-600 mb-8">50</div>
                     <div class="flex gap-4 w-full">
-                        <button id="btn-down" class="flex-1 bg-red-100 text-red-600 py-6 rounded-xl font-bold active:bg-red-200">DOWN</button>
-                        <button id="btn-up" class="flex-1 bg-blue-100 text-blue-600 py-6 rounded-xl font-bold active:bg-blue-200">UP</button>
+                        <button onclick="window.lv2_change('down')" class="flex-1 bg-red-100 text-red-600 py-6 rounded-xl font-bold active:bg-red-200">DOWN</button>
+                        <button onclick="window.lv2_change('up')" class="flex-1 bg-blue-100 text-blue-600 py-6 rounded-xl font-bold active:bg-blue-200">UP</button>
                     </div>
-                    <button id="btn-ok" class="mt-8 w-full bg-gray-800 text-white py-3 rounded-xl font-bold">설정 완료</button>
+                    <button onclick="window.lv2_check()" class="mt-8 w-full bg-gray-800 text-white py-3 rounded-xl font-bold">설정 완료</button>
                 </div>
             `;
             lucide.createIcons();
-
-            document.getElementById('btn-down').onclick = () => changeVol('down');
-            document.getElementById('btn-up').onclick = () => changeVol('up');
-            document.getElementById('btn-ok').onclick = () => {
+            window.lv2_change = (dir) => {
+                trackClick();
+                const jump = Math.floor(Math.random() * 15) + 1;
+                vol = (dir === 'up') ? vol + jump : vol - jump;
+                if (vol < 0) vol = 0; if (vol > 100) vol = 100;
+                document.getElementById('vol-display').innerText = vol;
+            };
+            window.lv2_check = () => {
                 trackClick();
                 if (vol === target) nextLevel();
                 else alert(`현재: ${vol} / 목표: ${target}`);
             };
         }
 
-        // Level 3: 펌프
         function renderLevel3(el) {
-            let progress = 0;
+            let seats = Array(16).fill('available');
+            let battleProgress = 50;
+            let battleInterval = null;
+            let currentSeat = null;
+            let opponentName = "";
 
-            const timer = setInterval(() => {
-                progress = Math.max(0, progress - 2);
-                updateBar();
-            }, 50);
-            state.timers.push(timer);
+            const adjs = ["성급한", "눈치빠른", "배고픈", "졸린", "화난", "즐거운", "욕심쟁이", "우아한", "소심한", "용감한", "수상한", "지루한"];
+            const nouns = ["오소리", "알파카", "물개", "호랑이", "사자", "토끼", "쿼카", "다람쥐", "햄스터", "치타", "고양이", "강아지"];
 
-            function updateBar() {
-                const bar = document.getElementById('pump-bar');
-                if (bar) bar.style.width = `${progress}%`;
-                const icon = document.getElementById('pump-icon');
-                if (icon) {
-                    if (progress > 80) icon.classList.replace('text-gray-400', 'text-green-500');
-                    else icon.classList.replace('text-green-500', 'text-gray-400');
+            function getFakeName() {
+                const a = adjs[Math.floor(Math.random() * adjs.length)];
+                const n = nouns[Math.floor(Math.random() * nouns.length)];
+                const num = Math.floor(Math.random() * 1000);
+                return `${a}${n}${num}`;
+            }
+
+            function draw() {
+                if (currentSeat === null) {
+                    let gridHtml = seats.map((status, i) => {
+                        let color = status === 'available' ? 'bg-slate-200 hover:bg-slate-300 text-slate-500' : 'bg-red-200 text-red-400 cursor-not-allowed';
+                        let icon = status === 'available' ? 'armchair' : 'x';
+                        return `
+                            <button onclick="window.lv3_select(${i})" ${status === 'taken' ? 'disabled' : ''} 
+                                class="w-full aspect-square rounded-lg flex items-center justify-center ${color} transition-colors">
+                                <i data-lucide="${icon}" class="w-6 h-6"></i>
+                            </button>
+                        `;
+                    }).join('');
+
+                    el.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full px-6 text-center">
+                            <h3 class="font-bold text-xl mb-2">티켓팅 전쟁</h3>
+                            <p class="text-sm text-gray-500 mb-6">빈 좌석을 선택해 접속 경쟁에서 승리하세요.<br>(광클 대결)</p>
+                            <div class="grid grid-cols-4 gap-3 w-full max-w-[280px]">
+                                ${gridHtml}
+                            </div>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                } else {
+                    el.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full px-6 text-center w-full animate-fade-in">
+                            <h3 class="font-bold text-xl mb-4 text-red-600 animate-pulse">접속 대기열 진입!</h3>
+                            <p class="text-sm text-gray-500 mb-8">서버 접속 경쟁 중입니다.<br>게이지가 0이 되기 전에 채우세요!</p>
+                            
+                            <div class="w-full h-8 bg-red-100 rounded-full overflow-hidden mb-2 border border-red-200 relative">
+                                <div id="battle-bar" class="h-full bg-blue-500 transition-all duration-75" style="width: ${battleProgress}%"></div>
+                                <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700 opacity-50 px-2 truncate">
+                                    ${opponentName} 님 vs 나
+                                </div>
+                            </div>
+                            <div class="flex justify-between w-full text-xs text-gray-400 mb-8 px-2">
+                                <span>접속 실패 (이선좌)</span>
+                                <span>예매 성공</span>
+                            </div>
+
+                            <button id="btn-battle" class="w-32 h-32 rounded-full bg-blue-600 text-white font-black text-xl shadow-[0_6px_0_rgb(29,78,216)] active:shadow-none active:translate-y-[6px] transition-all flex flex-col items-center justify-center">
+                                <i data-lucide="mouse-pointer-2" class="mb-2"></i>
+                                접속!
+                            </button>
+                        </div>
+                    `;
+                    lucide.createIcons();
+
+                    const btn = document.getElementById('btn-battle');
+                    const clickHandler = (e) => {
+                        e.preventDefault();
+                        trackClick();
+                        battleProgress += 4;
+                        updateBattle();
+                    };
+                    btn.addEventListener('mousedown', clickHandler);
+                    btn.addEventListener('touchstart', clickHandler);
+                }
+            }
+
+            function updateBattle() {
+                const bar = document.getElementById('battle-bar');
+                if (bar) bar.style.width = `${battleProgress}%`;
+
+                if (battleProgress >= 100) {
+                    clearInterval(battleInterval);
+                    nextLevel();
+                } else if (battleProgress <= 0) {
+                    clearInterval(battleInterval);
+                    alert("이선좌! (이미 선택된 좌석입니다)\n다른 좌석을 선택하세요.");
+                    seats[currentSeat] = 'taken';
+                    currentSeat = null;
+                    draw();
+                }
+            }
+
+            window.lv3_select = (idx) => {
+                trackClick();
+                currentSeat = idx;
+                battleProgress = 50;
+                opponentName = getFakeName();
+                draw();
+
+                battleInterval = setInterval(() => {
+                    battleProgress -= 1.5;
+                    updateBattle();
+                }, 50);
+                state.timers.push(battleInterval);
+            };
+
+            draw();
+        }
+
+        function renderLevel4(el) {
+            let adTime = 5.0;
+
+            function update() {
+                document.getElementById('ad-time').innerText = adTime.toFixed(1) + 's';
+                const skipBtn = document.getElementById('btn-skip-ad');
+
+                if (adTime <= 0) {
+                    document.getElementById('ad-time').innerText = '0.0s';
+                    skipBtn.classList.remove('bg-gray-300', 'cursor-not-allowed', 'text-gray-500');
+                    skipBtn.classList.add('bg-black', 'text-white', 'cursor-pointer');
+                    skipBtn.innerText = "Skip Ad \u23ED";
+                    skipBtn.disabled = false;
+                } else {
+                    skipBtn.disabled = true;
                 }
             }
 
             el.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full px-6 text-center no-select">
-                    <i id="pump-icon" data-lucide="battery-charging" class="w-10 h-10 text-gray-400 mb-4 transition-colors"></i>
-                    <h3 class="font-bold mb-2">수동 충전기</h3>
-                    <p class="text-sm text-gray-500 mb-6">게이지가 줄어들기 전에<br>연타해서 100%를 만드세요.</p>
-                    <div class="w-full h-8 bg-gray-200 rounded-full overflow-hidden mb-8 border border-gray-300">
-                        <div id="pump-bar" class="h-full bg-green-500 transition-all duration-75 ease-linear" style="width: 0%"></div>
+                <div class="flex flex-col items-center justify-center h-full px-6 bg-black text-white rounded-xl relative overflow-hidden">
+                    <div class="absolute inset-0 bg-slate-900 flex items-center justify-center opacity-50">
+                        <i data-lucide="play-circle" class="w-20 h-20 text-white/20"></i>
                     </div>
-                    <button id="btn-tap" class="w-32 h-32 rounded-full bg-red-500 text-white font-bold text-xl shadow-[0_6px_0_rgb(185,28,28)] active:shadow-none active:translate-y-[6px] transition-all flex items-center justify-center">
-                        TAP!
-                    </button>
+                    <div class="z-10 w-full text-center">
+                        <div class="mb-4 text-sm text-gray-400 flex justify-between items-center bg-black/50 p-2 rounded">
+                            <span>Ad \u00B7 1 of 2</span>
+                            <span class="flex items-center gap-1"><i data-lucide="info" class="w-3 h-3"></i> sponsored</span>
+                        </div>
+                        
+                        <h3 class="text-xl font-bold mb-8">프리미엄 공기 캔 (500ml)</h3>
+                        
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="text-sm">광고 건너뛰기까지 <span id="ad-time" class="font-mono font-bold text-yellow-400 text-lg">5.0s</span></div>
+                            
+                            <button id="btn-wind" class="w-24 h-24 rounded-full border-4 border-yellow-400 flex flex-col items-center justify-center active:scale-95 transition-transform bg-yellow-900/30">
+                                <i data-lucide="rotate-cw" class="w-8 h-8 text-yellow-400 mb-1"></i>
+                                <span class="text-[10px] text-yellow-200">태엽 감기</span>
+                            </button>
+                            <p class="text-[10px] text-gray-500">클릭하여 시간을 흐르게 하세요</p>
+                        </div>
+                    </div>
+
+                    <div class="absolute bottom-4 right-4 z-20">
+                        <button id="btn-skip-ad" disabled class="px-6 py-2 bg-gray-300 text-gray-500 font-bold rounded flex items-center gap-2 text-sm transition-colors">
+                            Skip Ad in 5s
+                        </button>
+                    </div>
                 </div>
             `;
             lucide.createIcons();
 
-            const btn = document.getElementById('btn-tap');
-            const handleTap = (e) => {
+            const btnWind = document.getElementById('btn-wind');
+            const btnSkip = document.getElementById('btn-skip-ad');
+
+            const handleWind = (e) => {
                 e.preventDefault();
                 trackClick();
-                progress += 5;
-                if (progress >= 100) nextLevel();
-                updateBar();
+                if (adTime > 0) {
+                    adTime -= 0.1;
+                    update();
+                }
             };
-            btn.addEventListener('mousedown', handleTap);
-            btn.addEventListener('touchstart', handleTap);
-        }
+            btnWind.addEventListener('mousedown', handleWind);
+            btnWind.addEventListener('touchstart', handleWind);
 
-        // Level 4: 블라인드 타이머
-        function renderLevel4(el) {
-            let startTime = 0;
-            let pressing = false;
-
-            el.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full px-6 select-none">
-                    <i data-lucide="rotate-ccw" class="w-10 h-10 text-orange-500 mb-4"></i>
-                    <h3 class="font-bold mb-2">마음의 눈</h3>
-                    <p class="text-sm text-gray-500 mb-8 text-center">3초 동안 누르고 있다가 떼세요.<br>(시계 없음)</p>
-                    <button id="btn-timer" class="w-full py-12 rounded-xl text-xl font-bold transition-all bg-orange-100 text-orange-600">
-                        누르고 있으세요
-                    </button>
-                </div>
-            `;
-            lucide.createIcons();
-
-            const btn = document.getElementById('btn-timer');
-
-            const start = (e) => {
-                e.preventDefault();
+            btnSkip.onclick = () => {
                 trackClick();
-                pressing = true;
-                startTime = Date.now();
-                btn.innerText = "...";
-                btn.classList.replace('bg-orange-100', 'bg-orange-600');
-                btn.classList.replace('text-orange-600', 'text-white');
-                btn.classList.add('scale-95');
+                if (adTime <= 0) nextLevel();
             };
-
-            const end = (e) => {
-                e.preventDefault();
-                if (!pressing) return;
-                pressing = false;
-                const duration = (Date.now() - startTime) / 1000;
-
-                btn.classList.replace('bg-orange-600', 'bg-orange-100');
-                btn.classList.replace('text-white', 'text-orange-600');
-                btn.classList.remove('scale-95');
-                btn.innerText = "누르고 있으세요";
-
-                if (duration >= 3.0 && duration <= 3.5) nextLevel();
-                else alert(`실패! 기록: ${duration.toFixed(2)}초.\n3.0~3.5초 사이를 노리세요.`);
-            };
-
-            btn.addEventListener('mousedown', start);
-            btn.addEventListener('mouseup', end);
-            btn.addEventListener('touchstart', start);
-            btn.addEventListener('touchend', end);
         }
 
-        // Level 5: 보안 키패드
         function renderLevel5(el) {
             let input = "";
             let keys = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-            const target = "2580";
+            const target = "3579";
 
             function renderKeys() {
-                const container = document.getElementById('keypad-grid');
-                container.innerHTML = '';
-                keys.forEach(k => {
-                    const btn = document.createElement('button');
-                    btn.className = "bg-white border-b-4 border-slate-200 active:border-b-0 active:mt-1 h-16 rounded-lg text-xl font-bold text-slate-700 shadow-sm";
-                    btn.innerText = k;
-                    btn.onclick = () => handleKey(k);
-                    container.appendChild(btn);
-                });
+                const con = document.getElementById('keypad-grid');
+                if (!con) return;
+                con.innerHTML = keys.map(k => `
+                    <button onclick="window.lv5_click(${k})" class="bg-white border-b-4 border-slate-200 active:border-b-0 active:mt-1 h-16 rounded-lg text-xl font-bold text-slate-700 shadow-sm">${k}</button>
+                `).join('');
             }
-
-            function handleKey(num) {
+            window.lv5_click = (k) => {
                 trackClick();
-                input += num;
-                document.getElementById('keypad-display').innerText = input.padEnd(4, '*');
+                input += k;
+                const disp = document.getElementById('keypad-disp');
+                if (disp) disp.innerText = input.padEnd(4, '*');
 
-                if (input === target) nextLevel();
-                else if (input.length >= 4) {
-                    setTimeout(() => { alert("오답! 초기화."); input = ""; document.getElementById('keypad-display').innerText = "****"; }, 100);
+                if (input === target) {
+                    nextLevel();
+                    return;
                 }
-
-                keys = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]); // 셔플
+                else if (input.length >= 4) {
+                    setTimeout(() => { alert("오답!"); input = ""; if (document.getElementById('keypad-disp')) document.getElementById('keypad-disp').innerText = "****"; }, 100);
+                }
+                keys = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
                 renderKeys();
-            }
+            };
 
             el.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full px-4">
                     <i data-lucide="lock" class="w-10 h-10 text-slate-600 mb-4"></i>
                     <h3 class="font-bold mb-2">보안 키패드</h3>
-                    <p class="text-sm text-gray-500 mb-6">비밀번호: <span class="text-blue-600 font-bold">${target}</span></p>
-                    <div id="keypad-display" class="w-full bg-gray-100 p-4 rounded-lg mb-4 text-center text-2xl tracking-[1em] h-16 flex items-center justify-center font-bold">****</div>
+                    <p class="text-sm text-gray-500 mb-6">비밀번호: <span class="text-blue-600 font-bold tracking-widest">${target}</span></p>
+                    <div id="keypad-disp" class="w-full bg-gray-100 p-4 rounded-lg mb-4 text-center text-2xl tracking-[1em] h-16 flex items-center justify-center font-bold">****</div>
                     <div id="keypad-grid" class="grid grid-cols-3 gap-2 w-full max-w-[300px]"></div>
                 </div>
             `;
@@ -521,222 +539,292 @@
             renderKeys();
         }
 
-        // Level 6: 고장난 버튼
         function renderLevel6(el) {
-            let count = 0;
             el.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full px-6">
-                    <i data-lucide="zap" class="w-10 h-10 text-yellow-500 mb-4"></i>
-                    <h3 class="font-bold mb-2">접촉 불량</h3>
-                    <p class="text-sm text-gray-500 mb-8">작동할 때까지 누르세요 (<span id="broken-count">0</span>/5)</p>
-                    <button id="broken-btn" class="w-full py-8 bg-slate-200 text-slate-400 font-bold rounded shadow-inner active:bg-slate-300 active:scale-[0.99] transition-transform select-none">
-                        작동시키기
+                <div class="flex flex-col items-center justify-center h-full px-6 bg-slate-50">
+                    <!-- Bank UI Card -->
+                    <div class="w-full bg-white rounded-xl shadow-lg p-6 border border-slate-200">
+                        <div class="flex items-center justify-between mb-6 border-b pb-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">K</div>
+                                <span class="font-bold text-slate-700">K-Bank</span>
+                            </div>
+                            <i data-lucide="wifi" class="w-4 h-4 text-slate-400"></i>
+                        </div>
+
+                        <div class="mb-6">
+                            <p class="text-xs text-slate-400 mb-1">받는 사람</p>
+                            <p class="font-bold text-lg text-slate-800">지인 (친구)</p>
+                            <p class="text-xs text-slate-400">3333-xx-xxxxxx</p>
+                        </div>
+
+                        <div class="mb-8">
+                            <p class="text-xs text-slate-400 mb-1">보낼 금액</p>
+                            <p class="font-bold text-2xl text-blue-600">50,000 원</p>
+                        </div>
+
+                        <div id="transfer-msg" class="h-6 text-center text-xs font-bold text-red-500 mb-2"></div>
+
+                        <button id="btn-send-money" class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl active:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                            보내기
+                        </button>
+                    </div>
+
+                    <!-- Next Button (Hidden initially) -->
+                    <button id="btn-transfer-next" disabled class="mt-6 w-full py-4 bg-gray-300 text-gray-500 font-bold rounded-xl transition-all opacity-0 pointer-events-none">
+                        다음 단계로
                     </button>
                 </div>
             `;
             lucide.createIcons();
 
-            document.getElementById('broken-btn').onclick = () => {
+            const btnSend = document.getElementById('btn-send-money');
+            const btnNext = document.getElementById('btn-transfer-next');
+            const msgDisplay = document.getElementById('transfer-msg');
+
+            btnSend.onclick = () => {
                 trackClick();
-                if (Math.random() < 0.2) {
-                    count++;
-                    document.getElementById('broken-count').innerText = count;
-                    if (count >= 5) nextLevel();
-                }
+
+                // Loading State
+                btnSend.disabled = true;
+                btnSend.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-5 h-5"></i> 처리 중...`;
+                lucide.createIcons();
+                msgDisplay.innerText = "";
+
+                // 4% Success Chance (Revised)
+                setTimeout(() => {
+                    if (Math.random() < 0.04) {
+                        // Success
+                        btnSend.className = "w-full py-4 bg-green-500 text-white font-bold rounded-xl flex items-center justify-center gap-2";
+                        btnSend.innerHTML = `<i data-lucide="check" class="w-5 h-5"></i> 송금 완료`;
+                        lucide.createIcons();
+
+                        msgDisplay.className = "h-6 text-center text-xs font-bold text-green-600 mb-2";
+                        msgDisplay.innerText = "정상적으로 처리되었습니다.";
+
+                        // Enable Next Button
+                        btnNext.disabled = false;
+                        btnNext.classList.remove('bg-gray-300', 'text-gray-500', 'opacity-0', 'pointer-events-none');
+                        btnNext.classList.add('bg-slate-800', 'text-white', 'opacity-100', 'shadow-lg');
+                    } else {
+                        // Fail
+                        btnSend.disabled = false;
+                        btnSend.innerText = "보내기";
+
+                        const errors = [
+                            "네트워크 연결이 불안정합니다.",
+                            "알 수 없는 오류 (Code: 504)",
+                            "은행 시스템 점검 중입니다.",
+                            "보안 카드 번호 오류 (?)"
+                        ];
+                        msgDisplay.innerText = errors[Math.floor(Math.random() * errors.length)];
+                    }
+                }, 600);
             };
+
+            btnNext.onclick = () => {
+                trackClick();
+                nextLevel();
+            }
         }
 
-        // Level 7: 스트룹
         function renderLevel7(el) {
             let stage = 0;
             const quizzes = [
-                { text: "빨강", colorClass: "text-blue-600", answer: "blue" },
-                { text: "초록", colorClass: "text-red-600", answer: "red" },
-                { text: "파랑", colorClass: "text-yellow-500", answer: "yellow" },
+                { t: "빨강", c: "text-blue-600", a: "blue" },
+                { t: "초록", c: "text-red-600", a: "red" },
+                { t: "파랑", c: "text-yellow-500", a: "yellow" }
             ];
-
-            function renderQuiz() {
+            function renderQ() {
                 const q = quizzes[stage];
-                const quizText = document.getElementById('stroop-text');
-                quizText.innerText = q.text;
-                quizText.className = `text-6xl font-black mb-12 ${q.colorClass}`;
-                document.getElementById('stroop-stage').innerText = `${stage + 1}/3`;
+                document.getElementById('st-txt').innerText = q.t;
+                document.getElementById('st-txt').className = `text-6xl font-black mb-12 ${q.c}`;
+                document.getElementById('st-pg').innerText = `${stage + 1}/3`;
             }
-
-            function handleAnswer(val) {
+            window.lv7_ans = (v) => {
                 trackClick();
-                if (val === quizzes[stage].answer) {
-                    if (stage < 2) {
-                        stage++;
-                        renderQuiz();
-                    } else nextLevel();
+                if (v === quizzes[stage].a) {
+                    if (stage < 2) { stage++; renderQ(); } else nextLevel();
                 } else {
-                    alert("틀렸습니다! 글자 색을 누르세요.");
-                    stage = 0;
-                    renderQuiz();
+                    alert("틀렸습니다! 글자 색을 누르세요."); stage = 0; renderQ();
                 }
-            }
-
+            };
             el.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full px-4">
                     <i data-lucide="target" class="w-10 h-10 text-purple-500 mb-4"></i>
-                    <h3 class="font-bold mb-2">색깔 반사 신경 (<span id="stroop-stage">1/3</span>)</h3>
-                    <p class="text-sm text-gray-500 mb-8"><span class="font-bold text-black underline">글자 색상</span> 버튼을 누르세요.</p>
-                    <div id="stroop-text" class="text-6xl font-black mb-12"></div>
+                    <h3 class="font-bold mb-2">색깔 반사 신경 (<span id="st-pg">1/3</span>)</h3>
+                    <p class="text-sm text-gray-500 mb-8">글자 <span class="font-bold underline">색상</span> 버튼을 누르세요.</p>
+                    <div id="st-txt" class="text-6xl font-black mb-12"></div>
                     <div class="grid grid-cols-2 gap-4 w-full">
-                        <button class="bg-red-500 text-white font-bold h-20 rounded-xl shadow-lg active:scale-95 transition-transform" onclick="window.handleStroop('red')">빨강색</button>
-                        <button class="bg-blue-600 text-white font-bold h-20 rounded-xl shadow-lg active:scale-95 transition-transform" onclick="window.handleStroop('blue')">파랑색</button>
-                        <button class="bg-green-600 text-white font-bold h-20 rounded-xl shadow-lg active:scale-95 transition-transform" onclick="window.handleStroop('green')">초록색</button>
-                        <button class="bg-yellow-500 text-white font-bold h-20 rounded-xl shadow-lg active:scale-95 transition-transform" onclick="window.handleStroop('yellow')">노랑색</button>
+                        <button class="bg-red-500 text-white font-bold h-20 rounded-xl" onclick="window.lv7_ans('red')">빨강</button>
+                        <button class="bg-blue-600 text-white font-bold h-20 rounded-xl" onclick="window.lv7_ans('blue')">파랑</button>
+                        <button class="bg-green-600 text-white font-bold h-20 rounded-xl" onclick="window.lv7_ans('green')">초록</button>
+                        <button class="bg-yellow-500 text-white font-bold h-20 rounded-xl" onclick="window.lv7_ans('yellow')">노랑</button>
                     </div>
                 </div>
             `;
-            lucide.createIcons();
-
-            // 전역 스코프에 핸들러 등록 (HTML onclick 용)
-            window.handleStroop = handleAnswer;
-            renderQuiz();
+            lucide.createIcons(); renderQ();
         }
 
-        // Level 8: 광고
         function renderLevel8(el) {
             el.innerHTML = `
                 <div class="relative w-full h-80 bg-slate-800 rounded-xl overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-4">
                     <div class="absolute inset-0 bg-gradient-to-br from-purple-600 to-blue-600 opacity-90"></div>
                     <div class="relative z-10 text-white">
                         <h2 class="text-3xl font-black text-yellow-300 animate-bounce mb-2">당첨 축하!!</h2>
-                        <p class="mb-6">아이폰 50 Pro Max 당첨!</p>
-                        <button id="fake-btn-1" class="bg-green-500 text-white font-bold py-3 px-8 rounded-full shadow-lg transform active:scale-90 transition-transform">수령하기</button>
+                        <button onclick="window.fake('낚임')" class="bg-green-500 text-white font-bold py-3 px-8 rounded-full shadow-lg transform active:scale-90 transition-transform">수령하기</button>
                     </div>
-                    <div id="fake-btn-2" class="absolute top-2 right-2 text-white/60 bg-black/20 p-1 rounded cursor-pointer z-20">
-                        <div class="border border-white/50 px-1 text-[10px]">AD</div>
-                    </div>
-                    <div id="fake-btn-3" class="absolute top-2 left-2 text-white cursor-pointer z-20 font-bold">X</div>
-                    <button id="real-close-btn" class="absolute bottom-1 right-1 w-6 h-6 flex items-center justify-center text-[10px] text-white/30 bg-black/10 z-30">닫기</button>
+                    <div onclick="window.fake('광고')" class="absolute top-2 right-2 text-white/60 bg-black/20 p-1 rounded cursor-pointer z-20"><div class="border border-white/50 px-1 text-[10px]">AD</div></div>
+                    <div onclick="window.fake('이미지')" class="absolute top-2 left-2 text-white cursor-pointer z-20 font-bold">X</div>
+                    <button id="real-x" class="absolute bottom-1 right-1 w-6 h-6 flex items-center justify-center text-[10px] text-white/30 bg-black/10 z-30">닫기</button>
                 </div>
             `;
-
-            const fakeAction = (msg) => { trackClick(); alert(msg); };
-            document.getElementById('fake-btn-1').onclick = () => fakeAction("낚였습니다.");
-            document.getElementById('fake-btn-2').onclick = () => fakeAction("가짜 광고");
-            document.getElementById('fake-btn-3').onclick = () => fakeAction("이미지를 클릭했습니다.");
-            document.getElementById('real-close-btn').onclick = () => { trackClick(); nextLevel(); };
+            window.fake = (m) => { trackClick(); alert(m); };
+            document.getElementById('real-x').onclick = () => { trackClick(); nextLevel(); };
         }
 
-        // Level 9: 룰렛
+        // [MODIFIED LEVEL 9] 진짜 다운로드 버튼 찾기
         function renderLevel9(el) {
-            const safeIndex = Math.floor(Math.random() * 6);
-
+            const safe = Math.floor(Math.random() * 6);
             el.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full px-4">
-                    <i data-lucide="siren" class="w-10 h-10 text-red-500 mb-4"></i>
-                    <h3 class="font-bold mb-2">지뢰 찾기</h3>
-                    <p class="text-sm text-gray-500 mb-8">6개 중 1개만 정답입니다.</p>
-                    <div class="grid grid-cols-2 gap-4 w-full">
+                    <i data-lucide="download-cloud" class="w-10 h-10 text-green-600 mb-4"></i>
+                    <h3 class="font-bold mb-2">진짜 다운로드 찾기</h3>
+                    <p class="text-sm text-gray-500 mb-8 text-center">파일이 준비되었습니다.<br>광고가 아닌 <span class="font-bold text-red-500">진짜 버튼</span>을 클릭하세요.</p>
+                    <div class="grid grid-cols-2 gap-3 w-full">
                         ${[0, 1, 2, 3, 4, 5].map(i => `
-                            <button id="roulette-${i}" class="h-20 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 active:bg-red-50 font-bold text-gray-400 text-xl">?</button>
+                            <button onclick="window.lv9(${i})" class="h-16 bg-green-500 hover:bg-green-600 text-white font-bold rounded shadow-md flex items-center justify-center gap-2 text-sm">
+                                <i data-lucide="download" class="w-4 h-4"></i> Download
+                            </button>
                         `).join('')}
                     </div>
+                    <p class="text-[10px] text-gray-300 mt-4">Sponsored Links included</p>
                 </div>
             `;
             lucide.createIcons();
-
-            [0, 1, 2, 3, 4, 5].forEach(i => {
-                document.getElementById(`roulette-${i}`).onclick = () => {
-                    trackClick();
-                    if (i === safeIndex) nextLevel();
-                    else alert("꽝! 다시 고르세요.");
-                };
-            });
+            window.lv9 = (i) => {
+                trackClick();
+                if (i === safe) {
+                    alert("다운로드가 시작됩니다. (성공)");
+                    nextLevel();
+                } else {
+                    alert("광고 페이지로 이동합니다... (낚시)");
+                }
+            };
         }
 
-        // Level 10: 지문 인식
         function renderLevel10(el) {
-            let progress = 0;
-            let scanning = false;
-            let interval = null;
+            const colorOptions = [
+                "Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Purple", "Pink", "Mint", "Cyan",
+                "Brown", "Lime", "Magenta", "Teal", "Olive", "Maroon", "Gold", "Silver",
+                "Navy", "Grey", "Beige"
+            ];
+
+            const validColors = ["Navy", "Grey", "Beige"];
+            const validSizes = [95, 100, 105];
+
+            const targetColor = validColors[Math.floor(Math.random() * validColors.length)];
+            const targetSize = validSizes[Math.floor(Math.random() * validSizes.length)];
+
+            let currColorIdx = 0;
+            let currSize = 50;
 
             function updateUI() {
-                const bar = document.getElementById('scan-bar');
-                const icon = document.getElementById('scan-icon');
-                const btn = document.getElementById('scan-btn');
+                document.getElementById('display-color').innerText = colorOptions[currColorIdx];
+                document.getElementById('display-color').style.color = colorOptions[currColorIdx].toLowerCase();
+                document.getElementById('display-size').innerText = currSize;
 
-                if (bar) bar.style.width = `${progress}%`;
-
-                if (scanning) {
-                    icon.classList.add('text-blue-500', 'animate-pulse');
-                    icon.classList.remove('text-gray-300');
-                    btn.classList.add('border-blue-500', 'bg-blue-50', 'scale-95');
-                    btn.classList.remove('border-gray-300', 'bg-white');
-                } else {
-                    icon.classList.remove('text-blue-500', 'animate-pulse');
-                    icon.classList.add('text-gray-300');
-                    btn.classList.remove('border-blue-500', 'bg-blue-50', 'scale-95');
-                    btn.classList.add('border-gray-300', 'bg-white');
-                }
+                const box = document.getElementById('preview-box');
+                box.style.backgroundColor = colorOptions[currColorIdx].toLowerCase();
             }
-
-            const startScan = (e) => {
-                e.preventDefault();
-                trackClick();
-                scanning = true;
-                updateUI();
-                interval = setInterval(() => {
-                    progress += (Math.random() > 0.7 ? 0 : 2);
-                    if (progress >= 100) {
-                        clearInterval(interval);
-                        nextLevel();
-                    }
-                    updateUI();
-                }, 50);
-            };
-
-            const stopScan = (e) => {
-                if (e) e.preventDefault();
-                scanning = false;
-                clearInterval(interval);
-                progress = 0;
-                updateUI();
-            };
 
             el.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full px-4 select-none">
-                    <i id="scan-icon" data-lucide="fingerprint" class="w-14 h-14 mb-6 transition-colors text-gray-300"></i>
-                    <h3 class="font-bold mb-2">본인 인증</h3>
-                    <p class="text-sm text-gray-500 mb-8">100%가 될 때까지 꾹 누르세요.</p>
-                    <div class="w-full h-4 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                        <div id="scan-bar" class="h-full bg-blue-500 transition-all duration-75" style="width: 0%"></div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="shopping-bag" class="w-6 h-6 text-slate-700"></i>
+                        <h3 class="font-bold text-lg">초특가 맨투맨</h3>
                     </div>
-                    <button id="scan-btn" class="w-24 h-24 rounded-full border-4 flex items-center justify-center transition-all border-gray-300 bg-white">
-                        <i data-lucide="fingerprint" class="w-10 h-10 text-gray-300"></i>
+                    <div class="bg-yellow-50 px-4 py-2 rounded-lg border border-yellow-200 mb-6 text-center shadow-sm">
+                        <p class="text-xs text-gray-500">주문 목표:</p>
+                        <p class="font-bold text-lg text-slate-800">
+                            <span class="text-${targetColor === 'Navy' ? 'blue-900' : targetColor === 'Grey' ? 'gray-500' : 'yellow-700'}">${targetColor}</span> 
+                            / Size ${targetSize}
+                        </p>
+                    </div>
+
+                    <div id="preview-box" class="w-24 h-24 rounded-lg shadow-inner border border-slate-200 mb-6 transition-colors duration-200 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        <span id="display-size">50</span>
+                    </div>
+
+                    <div class="w-full space-y-4 mb-8">
+                        <div class="flex items-center justify-between bg-white border p-3 rounded-lg shadow-sm">
+                            <span class="text-sm font-bold text-gray-500 w-12">Color</span>
+                            <div class="flex-1 text-center font-mono font-bold text-lg" id="display-color">Red</div>
+                            <button id="btn-color" class="w-12 h-12 bg-slate-100 rounded hover:bg-slate-200 flex items-center justify-center active:bg-slate-300">
+                                <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center justify-between bg-white border p-3 rounded-lg shadow-sm">
+                            <span class="text-sm font-bold text-gray-500 w-12">Size</span>
+                            <div class="flex-1 text-center text-xs text-gray-400">
+                                (50~200, +5 단위)
+                            </div>
+                            <button id="btn-size" class="w-12 h-12 bg-slate-100 rounded hover:bg-slate-200 flex items-center justify-center active:bg-slate-300 font-bold text-blue-600">
+                                +5
+                            </button>
+                        </div>
+                    </div>
+
+                    <button id="btn-buy" class="w-full py-4 bg-slate-900 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <i data-lucide="credit-card" class="w-5 h-5"></i> 구매하기
                     </button>
                 </div>
             `;
             lucide.createIcons();
 
-            const btn = document.getElementById('scan-btn');
-            btn.addEventListener('mousedown', startScan);
-            btn.addEventListener('mouseup', stopScan);
-            btn.addEventListener('mouseleave', stopScan);
-            btn.addEventListener('touchstart', startScan);
-            btn.addEventListener('touchend', stopScan);
+            updateUI();
+
+            document.getElementById('btn-color').onclick = () => {
+                trackClick();
+                currColorIdx = (currColorIdx + 1) % colorOptions.length;
+                updateUI();
+            };
+
+            document.getElementById('btn-size').onclick = () => {
+                trackClick();
+                currSize += 5;
+                if (currSize > 200) currSize = 50;
+                updateUI();
+            };
+
+            document.getElementById('btn-buy').onclick = () => {
+                trackClick();
+                const selectedColor = colorOptions[currColorIdx];
+
+                if (selectedColor === targetColor && currSize === targetSize) {
+                    alert("주문 성공! 배송준비중...");
+                    nextLevel();
+                } else {
+                    let msg = "옵션 오류:\n";
+                    if (selectedColor !== targetColor) msg += `- 색상이 다릅니다 (선택: ${selectedColor})\n`;
+                    if (currSize !== targetSize) msg += `- 사이즈가 다릅니다 (선택: ${currSize})`;
+                    alert(msg);
+                }
+            };
         }
 
-        // --- 투표 화면 ---
+        // ==========================================
+        // 4. 투표 및 결과
+        // ==========================================
+
         function showVoting() {
             clearAllTimers();
             state.view = 'voting';
-
-            const listHtml = state.levels.map(level => `
-                <label class="flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all border-slate-100 hover:bg-slate-50" id="vote-label-${level.id}" onclick="selectVote(${level.id})">
-                    <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 border-slate-300" id="vote-circle-${level.id}">
-                        <div class="w-3 h-3 bg-indigo-600 rounded-full hidden" id="vote-dot-${level.id}"></div>
-                    </div>
-                    <input type="radio" name="vote" value="${level.id}" class="hidden">
-                    <div>
-                        <p class="font-bold text-slate-700" id="vote-text-${level.id}">${level.title}</p>
-                        <p class="text-xs text-slate-400">Entry No. ${level.id}</p>
-                    </div>
+            const list = state.levels.map(l => `
+                <label class="flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all border-slate-100 hover:bg-slate-50" id="vl-${l.id}" onclick="selVote(${l.id})">
+                    <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 border-slate-300" id="vc-${l.id}"><div class="w-3 h-3 bg-indigo-600 rounded-full hidden" id="vd-${l.id}"></div></div>
+                    <div><p class="font-bold text-slate-700" id="vt-${l.id}">${l.title}</p><p class="text-xs text-slate-400">Entry No. ${l.id}</p></div>
                 </label>
             `).join('');
 
@@ -744,75 +832,38 @@
                 <div class="flex-1 flex flex-col bg-slate-50 overflow-hidden">
                     <div class="bg-indigo-600 p-6 text-white text-center shrink-0">
                         <h1 class="text-xl font-bold">체험 종료!</h1>
-                        <p class="opacity-80 text-sm mt-1">최악의 사용자 경험(UX)에 투표하세요.</p>
+                        <p class="opacity-80 text-sm mt-1">최악의 UX에 투표하세요.</p>
                     </div>
-                    <div class="p-6 overflow-y-auto flex-grow hide-scrollbar">
-                        <div class="space-y-3">
-                            ${listHtml}
-                        </div>
-                    </div>
+                    <div class="p-6 overflow-y-auto flex-grow hide-scrollbar"><div class="space-y-3">${list}</div></div>
                     <div class="p-6 border-t border-slate-100 shrink-0 bg-white">
-                        <button onclick="submitVote()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95">
-                            <i data-lucide="send" class="w-5 h-5"></i> 투표 제출하기
-                        </button>
+                        <button onclick="subVote()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95"><i data-lucide="send" class="w-5 h-5"></i> 투표 제출하기</button>
                     </div>
                 </div>
             `);
+            window.selVote = (id) => {
+                trackClick(); state.selectedVote = id;
+                state.levels.forEach(l => {
+                    const active = l.id === id;
+                    const lb = document.getElementById(`vl-${l.id}`);
+                    lb.className = `flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${active ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200' : 'border-slate-100 hover:bg-slate-50'}`;
+                    document.getElementById(`vc-${l.id}`).className = `w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 ${active ? 'border-indigo-600' : 'border-slate-300'}`;
+                    document.getElementById(`vd-${l.id}`).classList.toggle('hidden', !active);
+                    document.getElementById(`vt-${l.id}`).className = `font-bold ${active ? 'text-indigo-900' : 'text-slate-700'}`;
+                });
+            };
+            window.subVote = () => { trackClick(); if (state.selectedVote) showResult(); else alert("선택해주세요!"); };
         }
 
-        function selectVote(id) {
-            trackClick();
-            state.selectedVote = id;
-
-            // UI 업데이트
-            state.levels.forEach(l => {
-                const label = document.getElementById(`vote-label-${l.id}`);
-                const circle = document.getElementById(`vote-circle-${l.id}`);
-                const dot = document.getElementById(`vote-dot-${l.id}`);
-                const text = document.getElementById(`vote-text-${l.id}`);
-
-                if (l.id === id) {
-                    label.classList.add('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-200', 'ring-offset-1');
-                    label.classList.remove('border-slate-100', 'hover:bg-slate-50');
-                    circle.classList.replace('border-slate-300', 'border-indigo-600');
-                    dot.classList.remove('hidden');
-                    text.classList.replace('text-slate-700', 'text-indigo-900');
-                } else {
-                    label.classList.remove('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-200', 'ring-offset-1');
-                    label.classList.add('border-slate-100', 'hover:bg-slate-50');
-                    circle.classList.replace('border-indigo-600', 'border-slate-300');
-                    dot.classList.add('hidden');
-                    text.classList.replace('text-indigo-900', 'text-slate-700');
-                }
-            });
-        }
-
-        function submitVote() {
-            trackClick();
-            if (state.selectedVote) showResult();
-            else alert("하나를 선택해주세요!");
-        }
-
-        // --- 결과 화면 ---
         function showResult() {
             clearAllTimers();
-            const votedItem = state.levels.find(l => l.id === state.selectedVote);
-
+            const pick = state.levels.find(l => l.id === state.selectedVote);
             render(`
                 <div class="flex-1 flex flex-col items-center justify-center p-6 font-sans text-center bg-slate-100">
                     <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8">
                         <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl animate-bounce">🗳️</div>
-                        <h2 class="text-2xl font-bold mb-2 text-slate-800">투표가 완료되었습니다!</h2>
-                        <div class="my-8">
-                            <p class="text-slate-500 mb-2">당신이 선택한 최악의 UI:</p>
-                            <div class="inline-block bg-slate-100 px-6 py-3 rounded-full font-bold text-slate-800 border border-slate-200">
-                                ${votedItem ? votedItem.title : '???'}
-                            </div>
-                        </div>
-                        <p class="text-sm text-slate-400 mb-8 leading-relaxed">여러분의 소중한 분노가<br>더 나은(혹은 더 나쁜) UI 연구에 활용됩니다.</p>
-                        <button onclick="showIntro()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-900 transition-colors">
-                            <i data-lucide="refresh-ccw" class="w-4 h-4"></i> 처음으로 돌아가기
-                        </button>
+                        <h2 class="text-2xl font-bold mb-2 text-slate-800">투표 완료!</h2>
+                        <div class="my-8"><p class="text-slate-500 mb-2">당신의 선택:</p><div class="inline-block bg-slate-100 px-6 py-3 rounded-full font-bold text-slate-800 border border-slate-200">${pick?.title}</div></div>
+                        <button onclick="showIntro()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-900 transition-colors"><i data-lucide="refresh-ccw" class="w-4 h-4"></i> 처음으로</button>
                     </div>
                 </div>
             `);
