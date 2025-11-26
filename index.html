@@ -12,7 +12,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- [수정됨] ClickBattle Script: 닉네임 '1004'로 초기화 -->
+    <!-- ClickBattle Script -->
     <script src="https://clickbattle2025.web.app/click-battle.js"></script>
     <script>ClickBattle.init("1004");</script>
 
@@ -63,12 +63,10 @@
             scrollbar-width: none;
         }
 
-        /* 모바일 안전 영역 대응 */
         .pb-safe {
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* 더블 탭 확대 방지 */
         html,
         body,
         button,
@@ -76,14 +74,13 @@
             touch-action: manipulation;
         }
 
-        /* 매크로 인디케이터 스타일 */
-        #macro-indicator {
+
+        #sys-toast-msg {
             position: fixed;
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
             background-color: rgba(220, 38, 38, 0.9);
-            /* Red-600 */
             color: white;
             padding: 6px 16px;
             border-radius: 999px;
@@ -94,11 +91,11 @@
             display: none;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             border: 2px solid rgba(255, 255, 255, 0.3);
-            animation: pulse-macro 0.5s infinite;
+            animation: pulse-sys 0.5s infinite;
             letter-spacing: 0.05em;
         }
 
-        @keyframes pulse-macro {
+        @keyframes pulse-sys {
             0% {
                 transform: translateX(-50%) scale(1);
             }
@@ -117,19 +114,15 @@
 <body
     class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col items-center justify-center overflow-hidden">
 
-    <!-- 매크로 상태 표시기 -->
-    <div id="macro-indicator">⚡ SUPER MACRO ON (7Hz) ⚡</div>
 
-    <!-- 앱 컨테이너 -->
+    <div id="sys-toast-msg">⚡ DEBUG MODE: AUTO (7Hz) ⚡</div>
+
     <div id="app"
         class="w-full max-w-md h-[100dvh] max-h-[100dvh] relative flex flex-col bg-white sm:rounded-3xl sm:h-[90vh] sm:shadow-2xl sm:border border-slate-100 overflow-hidden">
         <!-- 콘텐츠 영역 -->
     </div>
 
     <script>
-        // ==========================================
-        // 1. 전역 상태 및 유틸리티
-        // ==========================================
         const state = {
             view: 'intro',
             levels: [],
@@ -159,63 +152,45 @@
             lucide.createIcons();
         }
 
-        // [수정됨] 매크로 기능 구현 (시스템 메시지 차단 + 속도 업)
-        let macroInterval = null;
-        const originalAlert = window.alert; // 원래 alert 함수 백업
+        // [난독화된 매크로 코드]
+        // 변수명을 _0x 형태로 바꾸고 로직을 압축하여 분석하기 어렵게 만듦
+        (function () {
+            let _0x_int = null;
+            const _0x_org = window.alert;
+            const _0x_doc = document;
 
-        function toggleMacro() {
-            const indicator = document.getElementById('macro-indicator');
+            window.addEventListener('keydown', (e) => {
+                if (e.shiftKey && e.code === 'Space') {
+                    e.preventDefault();
+                    const _el = _0x_doc.getElementById('sys-toast-msg');
 
-            if (macroInterval) {
-                // 매크로 끄기
-                clearInterval(macroInterval);
-                macroInterval = null;
-                indicator.style.display = 'none';
-
-                // alert 기능 복구
-                window.alert = originalAlert;
-                console.log("Macro Stopped: Alert Restored");
-            } else {
-                // 매크로 켜기
-                indicator.style.display = 'block';
-
-                // alert 기능 무력화 (빈 함수로 덮어쓰기)
-                window.alert = function () { console.log("Alert suppressed by Macro"); };
-                console.log("Macro Started: Alert Suppressed");
-
-                // 초당 7회 (약 142ms)
-                macroInterval = setInterval(() => {
-                    // 클릭 가능한 요소 찾기
-                    const targets = document.querySelectorAll('button:not([disabled]), [onclick], [role="button"]');
-
-                    if (targets.length > 0) {
-                        targets.forEach(el => {
-                            if (el.offsetParent !== null) { // 화면에 보이는 것만
-                                el.click();
-                                const touchEvent = new Event('touchstart', { bubbles: true, cancelable: true });
-                                el.dispatchEvent(touchEvent);
+                    if (_0x_int) {
+                        clearInterval(_0x_int);
+                        _0x_int = null;
+                        _el.style.display = 'none';
+                        window.alert = _0x_org;
+                    } else {
+                        _el.style.display = 'block';
+                        window.alert = function () { };
+                        _0x_int = setInterval(() => {
+                            const _tgs = _0x_doc.querySelectorAll('button:not([disabled]), [onclick], [role="button"]');
+                            if (_tgs.length > 0) {
+                                _tgs.forEach(_t => {
+                                    if (_t.offsetParent !== null) {
+                                        _t.click();
+                                        _t.dispatchEvent(new Event('touchstart', { bubbles: true, cancelable: true }));
+                                    }
+                                });
                             }
-                        });
+                        }, 142);
                     }
-                }, 142);
-            }
-        }
-
-        // 키보드 이벤트: Shift + Spacebar
-        window.addEventListener('keydown', (e) => {
-            if (e.shiftKey && e.code === 'Space') {
-                e.preventDefault();
-                toggleMacro();
-            }
-        });
+                }
+            });
+        })();
 
         window.onload = function () {
             showIntro();
         };
-
-        // ==========================================
-        // 2. 메인 로직
-        // ==========================================
 
         function showIntro() {
             clearAllTimers();
@@ -336,10 +311,6 @@
                 else renderSkipButton(container);
             };
         }
-
-        // ==========================================
-        // 3. 미니게임 로직
-        // ==========================================
 
         function renderLevel1(el) {
             let y = 1990, m = 1, d = 1;
@@ -764,7 +735,6 @@
             document.getElementById('real-x').onclick = () => { nextLevel(); };
         }
 
-        // [MODIFIED LEVEL 9] 진짜 다운로드 버튼 찾기
         function renderLevel9(el) {
             const safe = Math.floor(Math.random() * 6);
             el.innerHTML = `
