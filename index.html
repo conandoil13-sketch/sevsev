@@ -82,30 +82,33 @@
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(255, 0, 0, 0.8);
+            background-color: rgba(220, 38, 38, 0.9);
+            /* Red-600 */
             color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: bold;
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-weight: 800;
             font-size: 12px;
             z-index: 9999;
             pointer-events: none;
             display: none;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            animation: pulse-macro 1s infinite;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            animation: pulse-macro 0.5s infinite;
+            letter-spacing: 0.05em;
         }
 
         @keyframes pulse-macro {
             0% {
-                opacity: 1;
+                transform: translateX(-50%) scale(1);
             }
 
             50% {
-                opacity: 0.5;
+                transform: translateX(-50%) scale(1.05);
             }
 
             100% {
-                opacity: 1;
+                transform: translateX(-50%) scale(1);
             }
         }
     </style>
@@ -115,7 +118,7 @@
     class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col items-center justify-center overflow-hidden">
 
     <!-- 매크로 상태 표시기 -->
-    <div id="macro-indicator">AUTO MACRO ON 🤖</div>
+    <div id="macro-indicator">⚡ SUPER MACRO ON (7Hz) ⚡</div>
 
     <!-- 앱 컨테이너 -->
     <div id="app"
@@ -156,8 +159,9 @@
             lucide.createIcons();
         }
 
-        // [NEW] 매크로 기능 구현
+        // [수정됨] 매크로 기능 구현 (시스템 메시지 차단 + 속도 업)
         let macroInterval = null;
+        const originalAlert = window.alert; // 원래 alert 함수 백업
 
         function toggleMacro() {
             const indicator = document.getElementById('macro-indicator');
@@ -167,38 +171,40 @@
                 clearInterval(macroInterval);
                 macroInterval = null;
                 indicator.style.display = 'none';
-                console.log("Macro Stopped");
+
+                // alert 기능 복구
+                window.alert = originalAlert;
+                console.log("Macro Stopped: Alert Restored");
             } else {
                 // 매크로 켜기
                 indicator.style.display = 'block';
-                console.log("Macro Started");
 
-                // 1초마다 클릭
+                // alert 기능 무력화 (빈 함수로 덮어쓰기)
+                window.alert = function () { console.log("Alert suppressed by Macro"); };
+                console.log("Macro Started: Alert Suppressed");
+
+                // 초당 7회 (약 142ms)
                 macroInterval = setInterval(() => {
-                    // 현재 화면의 클릭 가능한 모든 요소 찾기
-                    // button 태그, onclick 속성이 있는 요소, role이 button인 요소
+                    // 클릭 가능한 요소 찾기
                     const targets = document.querySelectorAll('button:not([disabled]), [onclick], [role="button"]');
 
                     if (targets.length > 0) {
-                        console.log(`Macro: Clicking ${targets.length} elements`);
                         targets.forEach(el => {
-                            // 화면에 보이는 요소만 클릭 시도 (간단한 체크)
-                            if (el.offsetParent !== null) {
+                            if (el.offsetParent !== null) { // 화면에 보이는 것만
                                 el.click();
-                                // 터치 이벤트도 같이 발생시켜줌 (모바일 대응)
                                 const touchEvent = new Event('touchstart', { bubbles: true, cancelable: true });
                                 el.dispatchEvent(touchEvent);
                             }
                         });
                     }
-                }, 1000); // 1초 주기
+                }, 142);
             }
         }
 
-        // 키보드 이벤트 리스너 등록
+        // 키보드 이벤트: Shift + Spacebar
         window.addEventListener('keydown', (e) => {
             if (e.shiftKey && e.code === 'Space') {
-                e.preventDefault(); // 스크롤 방지
+                e.preventDefault();
                 toggleMacro();
             }
         });
@@ -272,7 +278,6 @@
                             <span class="text-sm font-bold text-blue-600 w-10 text-right">${state.currentLevelIndex + 1}/${state.levels.length}</span>
                         </div>
                     </div>
-                    <!-- min-h-0 추가하여 flex container 내에서 오버플로우 방지 (비율 유지) -->
                     <div class="bg-white rounded-3xl shadow-xl overflow-hidden flex-1 flex flex-col relative border border-slate-100 z-0 min-h-0 shrink">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
                         <div class="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 shrink-0">
@@ -281,7 +286,6 @@
                         </div>
                         <div id="game-content" class="flex-grow relative overflow-hidden overflow-y-auto"></div>
                     </div>
-                    <!-- shrink-0 추가하여 버튼 영역 확보 -->
                     <div id="skip-container" class="mt-4 w-full min-h-[3.5rem] shrink-0"></div>
                     <p class="text-center text-xs text-slate-400 pb-2 mt-2 shrink-0">* 팁: 진정하시고 손가락 끝에 집중하세요.</p>
                 </div>
