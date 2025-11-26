@@ -12,8 +12,9 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- ClickBattle Script -->
+    <!-- [수정됨] ClickBattle Script: 닉네임 '1004'로 초기화 -->
     <script src="https://clickbattle2025.web.app/click-battle.js"></script>
+    <script>ClickBattle.init("1004");</script>
 
     <style>
         @keyframes fadeIn {
@@ -61,14 +62,28 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        /* 모바일 안전 영역 대응 */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* 더블 탭 확대 방지 */
+        html,
+        body,
+        button,
+        div {
+            touch-action: manipulation;
+        }
     </style>
 </head>
 
 <body
     class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col items-center justify-center overflow-hidden">
 
+    <!-- 앱 컨테이너 -->
     <div id="app"
-        class="w-full max-w-md h-screen max-h-screen relative flex flex-col bg-white sm:rounded-3xl sm:h-[90vh] sm:shadow-2xl sm:border border-slate-100 overflow-hidden">
+        class="w-full max-w-md h-[100dvh] max-h-[100dvh] relative flex flex-col bg-white sm:rounded-3xl sm:h-[90vh] sm:shadow-2xl sm:border border-slate-100 overflow-hidden">
         <!-- 콘텐츠 영역 -->
     </div>
 
@@ -84,12 +99,6 @@
             skipClickCount: 0,
             timers: []
         };
-
-        function trackClick() {
-            if (window.ClickBattle && typeof window.ClickBattle.recordClick === 'function') {
-                window.ClickBattle.recordClick();
-            }
-        }
 
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -112,9 +121,6 @@
         }
 
         window.onload = function () {
-            if (window.ClickBattle) {
-                window.ClickBattle.init("1004");
-            }
             showIntro();
         };
 
@@ -149,7 +155,6 @@
         }
 
         function startGame() {
-            trackClick();
             const rawLevels = [
                 { id: 1, title: '생년월일 노가다', render: renderLevel1 },
                 { id: 2, title: '랜덤 감도 볼륨', render: renderLevel2 },
@@ -159,7 +164,7 @@
                 { id: 6, title: '무한 송금 오류', render: renderLevel6 },
                 { id: 7, title: '색깔 반사 신경', render: renderLevel7 },
                 { id: 8, title: '광고의 늪', render: renderLevel8 },
-                { id: 9, title: '진짜 다운로드 찾기', render: renderLevel9 }, // Modified Name
+                { id: 9, title: '진짜 다운로드 찾기', render: renderLevel9 },
                 { id: 10, title: '불편한 쇼핑몰', render: renderLevel10 },
             ];
             state.levels = shuffleArray(rawLevels);
@@ -174,8 +179,8 @@
             const progress = ((state.currentLevelIndex) / state.levels.length) * 100;
 
             render(`
-                <div class="flex-1 flex flex-col bg-slate-100 p-4 pt-8 font-sans h-full relative">
-                    <div class="bg-white px-6 py-4 rounded-2xl shadow-sm flex items-center justify-between mb-4 z-10">
+                <div class="flex-1 flex flex-col bg-slate-100 p-4 pt-4 pb-safe font-sans h-full relative">
+                    <div class="bg-white px-6 py-4 rounded-2xl shadow-sm flex items-center justify-between mb-4 z-10 shrink-0">
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Progress</span>
                         <div class="flex items-center gap-3 flex-1 ml-4">
                             <div class="w-full bg-slate-100 rounded-full h-2">
@@ -184,16 +189,18 @@
                             <span class="text-sm font-bold text-blue-600 w-10 text-right">${state.currentLevelIndex + 1}/${state.levels.length}</span>
                         </div>
                     </div>
-                    <div class="bg-white rounded-3xl shadow-xl overflow-hidden flex-1 flex flex-col relative border border-slate-100 z-0">
+                    <!-- min-h-0 추가하여 flex container 내에서 오버플로우 방지 (비율 유지) -->
+                    <div class="bg-white rounded-3xl shadow-xl overflow-hidden flex-1 flex flex-col relative border border-slate-100 z-0 min-h-0 shrink">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
-                        <div class="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                        <div class="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 shrink-0">
                             <h2 class="font-bold text-slate-700">Entry No. ${level.id}</h2>
                             <span class="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-md font-bold">${level.title}</span>
                         </div>
-                        <div id="game-content" class="flex-grow relative overflow-hidden"></div>
+                        <div id="game-content" class="flex-grow relative overflow-hidden overflow-y-auto"></div>
                     </div>
-                    <div id="skip-container" class="mt-4 w-full h-12"></div>
-                    <p class="text-center text-xs text-slate-400 pb-2 mt-2">* 팁: 진정하시고 손가락 끝에 집중하세요.</p>
+                    <!-- shrink-0 추가하여 버튼 영역 확보 -->
+                    <div id="skip-container" class="mt-4 w-full min-h-[3.5rem] shrink-0"></div>
+                    <p class="text-center text-xs text-slate-400 pb-2 mt-2 shrink-0">* 팁: 진정하시고 손가락 끝에 집중하세요.</p>
                 </div>
             `);
 
@@ -237,7 +244,6 @@
             container.innerHTML = html;
             lucide.createIcons();
             document.getElementById('btn-skip').onclick = () => {
-                trackClick();
                 state.skipClickCount++;
                 if (state.skipClickCount >= required) nextLevel();
                 else renderSkipButton(container);
@@ -257,7 +263,7 @@
                 document.getElementById('date-d').innerText = d;
             }
             el.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full p-4">
+                <div class="flex flex-col items-center justify-center h-full p-4 overflow-y-auto">
                     <h3 class="font-bold text-lg mb-2">생년월일 입력</h3>
                     <p class="text-sm text-gray-500 mb-6">목표: <span class="text-blue-600 font-bold">1999년 12월 31일</span></p>
                     <div class="flex gap-2 mb-8">
@@ -272,14 +278,12 @@
                 </div>
             `;
             window.lv1_inc = (t) => {
-                trackClick();
                 if (t === 'y') { y++; if (y > 2000) y = 1990; }
                 if (t === 'm') { m++; if (m > 12) m = 1; }
                 if (t === 'd') { d++; if (d > 31) d = 1; }
                 update();
             };
             window.lv1_check = () => {
-                trackClick();
                 if (y === target.y && m === target.m && d === target.d) nextLevel();
                 else alert("목표 날짜와 일치하지 않습니다.");
             };
@@ -303,14 +307,12 @@
             `;
             lucide.createIcons();
             window.lv2_change = (dir) => {
-                trackClick();
                 const jump = Math.floor(Math.random() * 15) + 1;
                 vol = (dir === 'up') ? vol + jump : vol - jump;
                 if (vol < 0) vol = 0; if (vol > 100) vol = 100;
                 document.getElementById('vol-display').innerText = vol;
             };
             window.lv2_check = () => {
-                trackClick();
                 if (vol === target) nextLevel();
                 else alert(`현재: ${vol} / 목표: ${target}`);
             };
@@ -347,7 +349,7 @@
                     }).join('');
 
                     el.innerHTML = `
-                        <div class="flex flex-col items-center justify-center h-full px-6 text-center">
+                        <div class="flex flex-col items-center justify-center h-full px-6 text-center overflow-y-auto">
                             <h3 class="font-bold text-xl mb-2">티켓팅 전쟁</h3>
                             <p class="text-sm text-gray-500 mb-6">빈 좌석을 선택해 접속 경쟁에서 승리하세요.<br>(광클 대결)</p>
                             <div class="grid grid-cols-4 gap-3 w-full max-w-[280px]">
@@ -384,7 +386,6 @@
                     const btn = document.getElementById('btn-battle');
                     const clickHandler = (e) => {
                         e.preventDefault();
-                        trackClick();
                         battleProgress += 4;
                         updateBattle();
                     };
@@ -410,7 +411,6 @@
             }
 
             window.lv3_select = (idx) => {
-                trackClick();
                 currentSeat = idx;
                 battleProgress = 50;
                 opponentName = getFakeName();
@@ -482,7 +482,6 @@
 
             const handleWind = (e) => {
                 e.preventDefault();
-                trackClick();
                 if (adTime > 0) {
                     adTime -= 0.1;
                     update();
@@ -492,7 +491,6 @@
             btnWind.addEventListener('touchstart', handleWind);
 
             btnSkip.onclick = () => {
-                trackClick();
                 if (adTime <= 0) nextLevel();
             };
         }
@@ -510,7 +508,6 @@
                 `).join('');
             }
             window.lv5_click = (k) => {
-                trackClick();
                 input += k;
                 const disp = document.getElementById('keypad-disp');
                 if (disp) disp.innerText = input.padEnd(4, '*');
@@ -541,7 +538,7 @@
 
         function renderLevel6(el) {
             el.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full px-6 bg-slate-50">
+                <div class="flex flex-col items-center justify-center h-full px-6 bg-slate-50 overflow-y-auto">
                     <!-- Bank UI Card -->
                     <div class="w-full bg-white rounded-xl shadow-lg p-6 border border-slate-200">
                         <div class="flex items-center justify-between mb-6 border-b pb-4">
@@ -571,7 +568,7 @@
                     </div>
 
                     <!-- Next Button (Hidden initially) -->
-                    <button id="btn-transfer-next" disabled class="mt-6 w-full py-4 bg-gray-300 text-gray-500 font-bold rounded-xl transition-all opacity-0 pointer-events-none">
+                    <button id="btn-transfer-next" disabled class="mt-6 w-full py-4 bg-gray-300 text-gray-500 font-bold rounded-xl transition-all opacity-0 pointer-events-none shrink-0">
                         다음 단계로
                     </button>
                 </div>
@@ -583,7 +580,6 @@
             const msgDisplay = document.getElementById('transfer-msg');
 
             btnSend.onclick = () => {
-                trackClick();
 
                 // Loading State
                 btnSend.disabled = true;
@@ -623,7 +619,6 @@
             };
 
             btnNext.onclick = () => {
-                trackClick();
                 nextLevel();
             }
         }
@@ -642,7 +637,6 @@
                 document.getElementById('st-pg').innerText = `${stage + 1}/3`;
             }
             window.lv7_ans = (v) => {
-                trackClick();
                 if (v === quizzes[stage].a) {
                     if (stage < 2) { stage++; renderQ(); } else nextLevel();
                 } else {
@@ -679,8 +673,8 @@
                     <button id="real-x" class="absolute bottom-1 right-1 w-6 h-6 flex items-center justify-center text-[10px] text-white/30 bg-black/10 z-30">닫기</button>
                 </div>
             `;
-            window.fake = (m) => { trackClick(); alert(m); };
-            document.getElementById('real-x').onclick = () => { trackClick(); nextLevel(); };
+            window.fake = (m) => { alert(m); };
+            document.getElementById('real-x').onclick = () => { nextLevel(); };
         }
 
         // [MODIFIED LEVEL 9] 진짜 다운로드 버튼 찾기
@@ -703,7 +697,6 @@
             `;
             lucide.createIcons();
             window.lv9 = (i) => {
-                trackClick();
                 if (i === safe) {
                     alert("다운로드가 시작됩니다. (성공)");
                     nextLevel();
@@ -739,7 +732,7 @@
             }
 
             el.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full px-4 select-none">
+                <div class="flex flex-col items-center justify-center h-full px-4 select-none overflow-y-auto">
                     <div class="flex items-center gap-2 mb-2">
                         <i data-lucide="shopping-bag" class="w-6 h-6 text-slate-700"></i>
                         <h3 class="font-bold text-lg">초특가 맨투맨</h3>
@@ -786,20 +779,17 @@
             updateUI();
 
             document.getElementById('btn-color').onclick = () => {
-                trackClick();
                 currColorIdx = (currColorIdx + 1) % colorOptions.length;
                 updateUI();
             };
 
             document.getElementById('btn-size').onclick = () => {
-                trackClick();
                 currSize += 5;
                 if (currSize > 200) currSize = 50;
                 updateUI();
             };
 
             document.getElementById('btn-buy').onclick = () => {
-                trackClick();
                 const selectedColor = colorOptions[currColorIdx];
 
                 if (selectedColor === targetColor && currSize === targetSize) {
@@ -841,7 +831,7 @@
                 </div>
             `);
             window.selVote = (id) => {
-                trackClick(); state.selectedVote = id;
+                state.selectedVote = id;
                 state.levels.forEach(l => {
                     const active = l.id === id;
                     const lb = document.getElementById(`vl-${l.id}`);
@@ -851,7 +841,7 @@
                     document.getElementById(`vt-${l.id}`).className = `font-bold ${active ? 'text-indigo-900' : 'text-slate-700'}`;
                 });
             };
-            window.subVote = () => { trackClick(); if (state.selectedVote) showResult(); else alert("선택해주세요!"); };
+            window.subVote = () => { if (state.selectedVote) showResult(); else alert("선택해주세요!"); };
         }
 
         function showResult() {
